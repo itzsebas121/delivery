@@ -1,0 +1,87 @@
+CREATE TABLE USERS (
+    UserId INT PRIMARY KEY IDENTITY,
+    Name VARCHAR(100),
+    Email VARCHAR(100) UNIQUE,
+    PasswordHash VARCHAR(255),
+    RoleName VARCHAR(50),
+    RegistrationDate DATETIME
+);
+
+CREATE TABLE CATEGORIES (
+    CategoryId INT PRIMARY KEY,
+    CategoryName VARCHAR(100)
+);
+
+CREATE TABLE PRODUCTS (
+    ProductId INT PRIMARY KEY IDENTITY,
+    Name VARCHAR(100),
+    Description VARCHAR(200),
+    Price DECIMAL(10,2),
+    Stock INT,
+    ImageURL VARCHAR(255),
+    CategoryId INT,
+    FOREIGN KEY (CategoryId) REFERENCES CATEGORIES(CategoryId)
+);
+
+CREATE TABLE DISCOUNTS (
+    DiscountId INT PRIMARY KEY IDENTITY,
+    Code VARCHAR(50),
+    Description VARCHAR(255),
+    Percentage DECIMAL(5,2),
+    StartDate DATETIME,
+    EndDate DATETIME,
+    MaxUsage INT,
+    UsagePerUser INT,
+    IsActive BIT
+);
+
+CREATE TABLE ORDERS (
+    OrderId INT PRIMARY KEY IDENTITY,
+    UserId INT,
+    OrderDate DATETIME,
+    Status VARCHAR(50),
+    DeliveryAddress VARCHAR(255),
+    DiscountId INT NULL,
+    Total DECIMAL(10,2),
+    DiscountedTotal DECIMAL(10,2),
+    FOREIGN KEY (UserId) REFERENCES USERS(UserId),
+    FOREIGN KEY (DiscountId) REFERENCES DISCOUNTS(DiscountId)
+);
+
+CREATE TABLE ORDER_DETAILS (
+    DetailId INT PRIMARY KEY IDENTITY,
+    OrderId INT,
+    ProductId INT,
+    Quantity INT,
+    UnitPrice DECIMAL(10,2),
+    FOREIGN KEY (OrderId) REFERENCES ORDERS(OrderId),
+    FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)
+);
+
+CREATE TABLE NOTIFICATIONS (
+    NotificationId INT PRIMARY KEY IDENTITY,
+    UserId INT,
+    Message VARCHAR(255),
+    Date DATETIME,
+    IsRead BIT,
+    FOREIGN KEY (UserId) REFERENCES USERS(UserId)
+);
+
+CREATE TABLE ORDER_STATUS_HISTORY (
+    HistoryId INT PRIMARY KEY IDENTITY,
+    OrderId INT,
+    Status VARCHAR(50),
+    ChangeDate DATETIME,
+    Comment VARCHAR(255),
+    FOREIGN KEY (OrderId) REFERENCES ORDERS(OrderId)
+);
+
+CREATE TABLE PRODUCT_DISCOUNTS (
+    ProductDiscountId INT PRIMARY KEY IDENTITY,
+    ProductId INT,
+    Percentage DECIMAL(5,2),
+    StartDate DATETIME,
+    EndDate DATETIME,
+    IsActive BIT,
+    FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)
+);
