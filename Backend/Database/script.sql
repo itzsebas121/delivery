@@ -1,475 +1,163 @@
-CREATE DATABASE PedidosGas;
-GO
+-- Habilita HASHBYTES si usas SQL Server
+-- No necesario en versiones modernas, pero útil mencionarlo
 
-USE PedidosGas;
-GO
-CREATE TABLE Users (
-    Username NVARCHAR(100) PRIMARY KEY,
-    UserType NVARCHAR(20) NOT NULL CHECK (UserType IN ('Client', 'Distributor')),
-    HashedPassword VARBINARY(MAX) NOT NULL
+-- Usuarios
+CREATE TABLE USERS (
+    UserId INT PRIMARY KEY IDENTITY,
+    Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    PasswordHash VARBINARY(64) NOT NULL, -- HASHBYTES (SHA-256) genera 32 bytes = 64 hex
+    RoleName VARCHAR(50) NOT NULL,
+    RegistrationDate DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE Clients (
-    ClientID INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100) NOT NULL,
-    LastName NVARCHAR(100) NOT NULL,
-    Location NVARCHAR(255),
-    Username NVARCHAR(100)  NOT NULL UNIQUE, 
-    PhoneNumber Decimal(10,0) NOT NULL,
-    FOREIGN KEY (Username) REFERENCES Users(Username)
-        ON DELETE CASCADE 
+-- Categorías
+CREATE TABLE CATEGORIES (
+    CategoryId INT PRIMARY KEY IDENTITY,
+    CategoryName VARCHAR(100) NOT NULL
 );
 
-
-CREATE TABLE Distributors (
-    DistributorID INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(100) NOT NULL,
-    LastName NVARCHAR(100) NOT NULL,
-    Username NVARCHAR(100) NOT NULL UNIQUE, 
-    PhoneNumber Decimal(10,0) NOT NULL,
-    FOREIGN KEY (Username) REFERENCES Users(Username)
-        ON DELETE CASCADE 
+-- Productos
+CREATE TABLE PRODUCTS (
+    ProductId INT PRIMARY KEY IDENTITY,
+    Name VARCHAR(100) NOT NULL,
+    Description VARCHAR(200),
+    Price DECIMAL(10,2) NOT NULL,
+    Stock INT NOT NULL,
+    ImageURL VARCHAR(255),
+    CategoryId INT,
+    FOREIGN KEY (CategoryId) REFERENCES CATEGORIES(CategoryId)
 );
-CREATE TABLE Cylinders (
-    CylinderID INT PRIMARY KEY IDENTITY(1,1),
-    TypeCylinder NVARCHAR(50) NOT NULL,
-    Price float NOT NULL
+
+-- Descuentos
+CREATE TABLE DISCOUNTS (
+    DiscountId INT PRIMARY KEY IDENTITY,
+    Code VARCHAR(50) UNIQUE,
+    Description VARCHAR(255),
+    Percentage DECIMAL(5,2) NOT NULL,
+    StartDate DATETIME NOT NULL,
+    EndDate DATETIME NOT NULL,
+    MaxUsage INT,
+    UsagePerUser INT,
+    IsActive BIT DEFAULT 1
 );
-CREATE TABLE Orders (
-        OrderID INT PRIMARY KEY IDENTITY(1,1), 
-        ClientID INT NOT NULL,
-        DistributorID INT NULL,
-        OrderDate DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time',
-        OrderStatus NVARCHAR(50) NOT NULL CHECK (OrderStatus IN ('Pendiente', 'En Camino', 'Entregado', 'Cancelado')),
-        Location NVARCHAR(255),
-        Total FLOAT NULL,
-        FOREIGN KEY (ClientID) REFERENCES Clients(ClientID) 
-            ON DELETE CASCADE,
-        FOREIGN KEY (DistributorID) REFERENCES Distributors(DistributorID)
-            ON DELETE NO ACTION
-    );
 
-GO
-
-
-CREATE TABLE DetailStatus (
-    DetailStatusID INT IDENTITY(1,1) PRIMARY KEY, 
-    OrderID INT NOT NULL,
-    StatusDetail NVARCHAR(255) NOT NULL CHECK (StatusDetail IN ('Pendiente', 'En Camino', 'Entregado', 'Cancelado')),
-    DateUpdate DATETIMEOFFSET NOT NULL DEFAULT SYSDATETIMEOFFSET() AT TIME ZONE 'UTC' AT TIME ZONE 'SA Pacific Standard Time',
-    FOREIGN KEY (OrderID) REFERENCES orders(OrderID)
+-- Pedidos
+CREATE TABLE ORDERS (
+    OrderId INT PRIMARY KEY IDENTITY,
+    UserId INT NOT NULL,
+    OrderDate DATETIME DEFAULT GETDATE(),
+    Status VARCHAR(50) DEFAULT 'Pending',
+    DeliveryAddress VARCHAR(255),
+    DiscountId INT NULL,
+    Total DECIMAL(10,2) NOT NULL,
+    DiscountedTotal DECIMAL(10,2),
+    FOREIGN KEY (UserId) REFERENCES USERS(UserId),
+    FOREIGN KEY (DiscountId) REFERENCES DISCOUNTS(DiscountId)
 );
-GO
-CREATE TABLE Orders_details (
-    OdId INT PRIMARY KEY IDENTITY(1,1), 
-    OrderID INT NOT NULL,
-    Cylinder INT NOT NULL,
+
+-- Detalle de pedidos
+CREATE TABLE ORDER_DETAILS (
+    DetailId INT PRIMARY KEY IDENTITY,
+    OrderId INT,
+    ProductId INT,
     Quantity INT NOT NULL,
-    Total FLOAT NULL,
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID) 
-        ON DELETE CASCADE,
-    FOREIGN KEY (Cylinder) REFERENCES Cylinders(CylinderID)
-        ON DELETE NO ACTION
+    UnitPrice DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (OrderId) REFERENCES ORDERS(OrderId),
+    FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)
 );
 
-CREATE MASTER KEY ENCRYPTION BY PASSWORD = 'proyecto';
-GO
+-- Notificaciones
+CREATE TABLE NOTIFICATIONS (
+    NotificationId INT PRIMARY KEY IDENTITY,
+    UserId INT,
+    Message VARCHAR(255),
+    Date DATETIME DEFAULT GETDATE(),
+    IsRead BIT DEFAULT 0,
+    FOREIGN KEY (UserId) REFERENCES USERS(UserId)
+);
 
-CREATE CERTIFICATE MyCert
-WITH SUBJECT = 'proyecto';
-GO
+-- Historial de estados
+CREATE TABLE ORDER_STATUS_HISTORY (
+    HistoryId INT PRIMARY KEY IDENTITY,
+    OrderId INT,
+    Status VARCHAR(50),
+    ChangeDate DATETIME DEFAULT GETDATE(),
+    Comment VARCHAR(255),
+    FOREIGN KEY (OrderId) REFERENCES ORDERS(OrderId)
+);
 
-CREATE SYMMETRIC KEY MySymmetricKey
-WITH ALGORITHM = AES_256
-ENCRYPTION BY CERTIFICATE MyCert;
-GO
-OPEN SYMMETRIC KEY MySymmetricKey
-    DECRYPTION BY CERTIFICATE MyCert;
-GO
+-- Descuentos por producto
+CREATE TABLE PRODUCT_DISCOUNTS (
+    ProductDiscountId INT PRIMARY KEY IDENTITY,
+    ProductId INT,
+    Percentage DECIMAL(5,2),
+    StartDate DATETIME,
+    EndDate DATETIME,
+    IsActive BIT DEFAULT 1,
+    FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)
+);
 
-CREATE OR ALTER PROCEDURE InsertClient 
-    @Name NVARCHAR(100),
-    @LastName NVARCHAR(100),
-    @Location NVARCHAR(255),
-    @UserName NVARCHAR(100),
-    @PhoneNumber Decimal(10,0),
-    @HashedPassword NVARCHAR(100),
-	@NameLocation NVARCHAR(400)
+go 
+CREATE PROCEDURE RegisterUser
+    @Name VARCHAR(100),
+    @Email VARCHAR(100),
+    @Password VARCHAR(255),
+    @RoleName VARCHAR(50)
 AS
 BEGIN
-    BEGIN TRY
-    BEGIN TRANSACTION;
-		OPEN SYMMETRIC KEY MySymmetricKey DECRYPTION BY CERTIFICATE MyCert;
-        DECLARE @EncryptedPassword VARBINARY(MAX);
-        SET @EncryptedPassword = ENCRYPTBYKEY(KEY_GUID('MySymmetricKey'), @HashedPassword);
-		CLOSE SYMMETRIC KEY MySymmetricKey;
+    SET NOCOUNT ON;
+    IF EXISTS (SELECT 1 FROM USERS WHERE Email = @Email)
+    BEGIN
+        RAISERROR('El correo ya está registrado.', 16, 1);
+        RETURN;
+    END
 
-        INSERT INTO Users (UserType, Username, HashedPassword)
-        VALUES ('Client', @UserName, @EncryptedPassword);
-
-        INSERT INTO Clients (Name, LastName, Location, Username, PhoneNumber, NameLocation)
-        VALUES (@Name, @LastName, @Location, @UserName, @PhoneNumber, @NameLocation);
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-        IF ERROR_NUMBER() = 2627 OR ERROR_NUMBER() = 2601
-        BEGIN
-            RAISERROR('Error: El usuario ya existe.', 16, 1);
-        END
-        ELSE
-        BEGIN
-            THROW;
-        END
-    END CATCH
+    INSERT INTO USERS (Name, Email, PasswordHash, RoleName)
+    VALUES (
+        @Name,
+        @Email,
+        HASHBYTES('SHA2_256', CONVERT(VARBINARY(MAX), @Password)),
+        @RoleName
+    );
 END;
-GO
-CREATE OR ALTER PROCEDURE InsertDistributor
-    @Name NVARCHAR(100),
-    @LastName NVARCHAR(100),
-    @UserName NVARCHAR(100),
-    @HashedPassword NVARCHAR(100),
-    @PhoneNumber Decimal(10,0)
+go 
+CREATE PROCEDURE GetUserInfo
+    @Email VARCHAR(100),
+    @Password VARCHAR(255)
 AS
 BEGIN
-    BEGIN TRY
-        BEGIN TRANSACTION;
-		OPEN SYMMETRIC KEY MySymmetricKey DECRYPTION BY CERTIFICATE MyCert;
-        DECLARE @EncryptedPassword VARBINARY(MAX);
-        SET @EncryptedPassword = ENCRYPTBYKEY(KEY_GUID('MySymmetricKey'), @HashedPassword);
-		CLOSE SYMMETRIC KEY MySymmetricKey;
+    SET NOCOUNT ON;
 
-        INSERT INTO Users (UserType, Username, HashedPassword)
-        VALUES ('Distributor', @UserName, @EncryptedPassword);
-
-        INSERT INTO Distributors (Name, LastName, Username, PhoneNumber)
-        VALUES (@Name, @LastName,  @UserName, @PhoneNumber);
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        ROLLBACK TRANSACTION;
-
-        IF ERROR_NUMBER() = 2627 OR ERROR_NUMBER() = 2601
-        BEGIN
-            RAISERROR('Error: El usuario ya existe.', 16, 1);
-        END
-        ELSE
-        BEGIN
-            THROW;
-        END
-    END CATCH
-END;
-GO
-
-EXEC InsertClient @Name = 'sebas', @LastName = 'Tipan', @Location='Quero',  @UserName = 'itzsebas121', @HashedPassword = 'xdsebas12' @PhoneNumber='1234567890';
-
-GO
-
-INSERT INTO Cylinders (TypeCylinder, Quantity)
-VALUES
-('Propane', 100),
-('Oxygen', 50),
-('Nitrogen', 70);
-
-INSERT INTO Orders (ClientID, DistributorID, OrderDate, OrderStatus, Cylinder, Quantity, Location)
-VALUES
-(1, 1, GETDATE(), 'Pending', 1, 10, '123 Main St'),
-(1, 1, GETDATE(), 'Completed', 2, 5, '456 Elm St'),
-(1, 1, GETDATE(), 'In Progress', 3, 15, '789 Maple Ave');
-GO
-
-CREATE OR ALTER PROCEDURE GetUserInfo
-    @Username NVARCHAR(50),
-    @Password NVARCHAR(100)
-AS
-BEGIN TRY
-    DECLARE @UserType NVARCHAR(50);
-    DECLARE @Location NVARCHAR(50);
-    DECLARE @ClientID INT;
-    DECLARE @DistributorID INT;
-    DECLARE @HashedPassword VARBINARY(MAX);
-	DECLARE @NameLocation NVARCHAR(400);
     SELECT 
-        @UserType = UserType,
-        @HashedPassword = HashedPassword
-    FROM Users
-    WHERE UserName = @Username;
-
-    IF @HashedPassword IS NULL
+        UserId,
+        Name,
+        Email,
+        RoleName,
+        'Login correcto' AS Message
+    FROM USERS
+    WHERE Email = @Email 
+    AND PasswordHash = HASHBYTES('SHA2_256', CONVERT(VARBINARY(MAX), @Password));
+    
+    IF @@ROWCOUNT = 0
     BEGIN
-        RAISERROR('Usuario no encontrado', 16, 1);
-        RETURN;
-    END
-    DECLARE @EncryptedPassword VARCHAR(100);
-	OPEN SYMMETRIC KEY MySymmetricKey DECRYPTION BY CERTIFICATE MyCert;
-    SET @EncryptedPassword = CONVERT(NVARCHAR(100), DECRYPTBYKEY(@HashedPassword));
-    CLOSE SYMMETRIC KEY MySymmetricKey;
-
-    IF @Password != @EncryptedPassword
-    BEGIN
-        RAISERROR ('Contraseña Incorrecta', 16, 1);
-        RETURN;
-    END
-
-    IF @UserType = 'Client'
-    BEGIN
-        SELECT 
-            @ClientID = ClientID,
-			@Location = Location,
-			@NameLocation = NameLocation
-        FROM Clients
-        WHERE Username = @Username;
-
-        SELECT 
-            @Username AS Username,
-            @UserType AS UserType,
-            @ClientID AS ClientID,
-			@Location as Location,
-			@NameLocation as NameLocation;
-			
-    END
-    ELSE IF @UserType = 'Distributor'
-    BEGIN
-        SELECT 
-            @DistributorID = DistributorID
-        FROM Distributors
-        WHERE Username = @Username;
-
-        SELECT 
-            @Username AS Username,
-            @UserType AS UserType,
-            @DistributorID AS DistributorID;
-    END
-    ELSE
-    BEGIN
-        PRINT 'Tipo de usuario no válido';
-    END
-END TRY
-BEGIN CATCH
-    SELECT ERROR_MESSAGE() AS ErrorMessage;
-END CATCH;
-GO
-EXEC GetUserInfo @Username = 'itzsebas121', @Password = 'xdsebas12';
-
-
-
-CREATE or alter PROCEDURE Insert_Detail_Order
-    @Order_ID int,
-	@Cylinder_id int,
-	@Quantiti_cylinders int
-AS
-BEGIN
-	DECLARE @Price_cylinder float;
-	DECLARE @TotalOrderDetail float;
-
-
-	SELECT @Price_cylinder = Price
-	from Cylinders
-	where CylinderID = @Cylinder_id;
-	
-
-	SET @TotalOrderDetail = @Price_cylinder * @Quantiti_cylinders;
-
-    INSERT INTO Orders_details(OrderID, Cylinder,Quantity, Total)
-	values (@Order_ID, @Cylinder_id, @Quantiti_cylinders,@TotalOrderDetail );
-
-	update orders
-	set Total = Total + @TotalOrderDetail
-	where OrderID = @Order_ID;
-END;
-
-
-
-CREATE or alter PROCEDURE Insert_Order
-    @ClientID INT,
-    @Location NVARCHAR(255),
-	@LocationName NVARCHAR(500)
-AS
-BEGIN
-    Declare @NewOrderID INT;
-    INSERT INTO Orders (ClientID , OrderStatus, Location, LocationCurrent, Total, LocationName)
-    VALUES (@ClientID, 'Pendiente', @Location,@Location, 0, @LocationName);
-    SET @NewOrderID = SCOPE_IDENTITY();
-	INSERT INTO DetailStatus (OrderID, StatusDetail) 
-	VALUES (@NewOrderID, 'Pendiente');
-    select @NewOrderID as NewOrderID;
-END;
-
-EXEC Insert_Detail_Order
-    @Order_ID = 1, 
-    @Cylinder_id = 1,
-    @Quantiti_cylinders = 3;,
-    @LocationName = "hjsdjshjd"
-
-
-
-CREATE VIEW vwOrdersDetails AS  
-SELECT   
-    CASE WHEN o.OrderStatus = 'Pendiente' THEN 'Pedido pendiente' ELSE d.Name END AS Name,  
-    CASE WHEN o.OrderStatus = 'Pendiente' THEN '' ELSE d.LastName END AS LastName,  
-    CASE WHEN o.OrderStatus = 'Pendiente' THEN '000 000 000' ELSE CAST(d.PhoneNumber AS nvarchar(10)) END AS PhoneNumber, 
-    o.OrderID,   
-    o.ClientID,   
-    o.OrderDate,   
-    o.OrderStatus,  
-	o.LocationName,
-    o.Location,
-	o.LocationCurrent,
-    o.Total AS OrderTotal,   
-    (SELECT   
-        od.OdId,   
-        cy.TypeCylinder,   
-        od.Quantity,   
-        cy.Price,  
-        od.Total AS DetailTotal  
-     FROM Orders_details od  
-     INNER JOIN Cylinders cy ON od.Cylinder = cy.CylinderID  
-     WHERE od.OrderID = o.OrderID  
-     FOR JSON PATH) AS OrderDetails  
-FROM Orders o
-LEFT JOIN Distributors d ON o.DistributorID = d.DistributorID;
-
-
-
-
-
-create  view vwSummaryClient as
-SELECT 
-    c.Name,
-    c.LastName,
-    c.ClientID,
-    COALESCE(COUNT(o.OrderID), 0) AS TotalOrders, 
-    COALESCE(SUM(CASE WHEN o.OrderStatus = 'Entregado' THEN 1 ELSE 0 END), 0) AS PedidosEntregados, 
-    COALESCE(SUM(CASE WHEN o.OrderStatus = 'Entregado' THEN o.Total ELSE 0 END), 0) AS GastoTotal
-FROM Clients c
-LEFT JOIN orders o ON o.ClientID = c.ClientID
-GROUP BY c.ClientID, c.Name, c.LastName;
-
-
-CREATE OR ALTER PROCEDURE SetOrderInTransit
-        @OrderID INT,
-        @DistributorID INT,
-		@Location_Current NVARCHAR(100)
-    AS
-    BEGIN
-        IF EXISTS (SELECT 1 FROM orders WHERE OrderID = @OrderID)
-        BEGIN
-
-            UPDATE orders
-    SET 
-        OrderStatus = 'En Camino', 
-        DistributorID = @DistributorID, 
-        OrderDate = DATEADD(HOUR, -0, GETUTCDATE()),
-		LocationCurrent = @Location_Current
-    WHERE 
-        OrderID = @OrderID;
-
-            INSERT INTO DetailStatus (OrderID, StatusDetail) values ( @OrderID, 'En Camino');
-        END
-        ELSE
-        BEGIN
-            PRINT 'El pedido no existe.';
-        END
-    END;
-    GO
-    CREATE OR ALTER PROCEDURE CancelOrder
-        @OrderID INT
-    AS
-BEGIN
-
-    IF EXISTS (SELECT 1 FROM orders WHERE OrderID = @OrderID)
-    BEGIN
-
-        UPDATE orders
-        SET OrderStatus = 'Cancelado' 
-        WHERE OrderID = @OrderID
-		INSERT INTO DetailStatus (OrderID, StatusDetail)  VALUES ( @OrderID, 'Cancelado');
-
-    END
-    ELSE
-    BEGIN
-        PRINT 'El pedido no existe.';
+        SELECT 'Credenciales inválidas' AS ErrorMessage;
     END
 END;
-GO
-CREATE OR ALTER PROCEDURE MarkOrderAsDelivered
-    @OrderID INT
-AS
-BEGIN
-    IF EXISTS (SELECT 1 FROM orders WHERE OrderID = @OrderID)
-    BEGIN
-        UPDATE orders
-        SET OrderStatus = 'Entregado'
-        WHERE OrderID = @OrderID;
-		INSERT INTO DetailStatus (OrderID, StatusDetail)  VALUES ( @OrderID, 'Entregado');
-      
-    END
-    ELSE
-    BEGIN
-        PRINT 'El pedido no existe.';
-    END
-END;
-GO
 
-create VIEW vwGetNewOrders
-as
-SELECT 
-O.OrderID,
-c.ClientID,
-c.Name, 
-c.LastName, 
-o.Total, 
-o.LocationName 
-,(SELECT   
-        cy.TypeCylinder,   
-        od.Quantity   
-     FROM Orders_details od  
-     INNER JOIN Cylinders cy ON od.Cylinder = cy.CylinderID  
-     WHERE od.OrderID = o.OrderID  
-     FOR JSON PATH) AS OrderDetails 
-from Orders o
-LEFT join Clients c on o.ClientID = c.ClientID  
-where o.OrderStatus = 'Pendiente'
+EXEC RegisterUser
+    @Name = 'Carlos Pérez',
+    @Email = 'carlosperez@gmail.com',
+    @Password = 'cliente123',
+    @RoleName = 'Client';
 
-GO
+EXEC RegisterUser
+    @Name = 'Lucía Torres',
+    @Email = 'luciatorres@gmail.com',
+    @Password = 'distribuidor456',
+    @RoleName = 'Distributor';
 
-CREATE VIEW vwGetCurrentOrdersDistributor
-as
-SELECT 
-O.OrderID,
-o.DistributorID,
-c.Name, 
-c.LastName, 
-c.PhoneNumber,
-o.Total
-,(SELECT   
-        cy.TypeCylinder,   
-        od.Quantity   
-     FROM Orders_details od  
-     INNER JOIN Cylinders cy ON od.Cylinder = cy.CylinderID  
-     WHERE od.OrderID = o.OrderID  
-     FOR JSON PATH) AS OrderDetails 
-from Orders o
-LEFT join Clients c on o.ClientID = c.ClientID  
-where o.OrderStatus = 'En Camino'
+	EXEC GetUserInfo 
+    @Email = 'carlosperez@gmail.com', 
+    @Password = 'cliente123';
 
-GO
-CREATE VIEW vwDistributorHistory
-as
-SELECT 
-    o.OrderID,
-    o.OrderDate,
-    o.OrderStatus,
-    c.Name AS ClientName,
-    c.LastName AS ClientLastName,
-    o.LocationName,
-    o.Total AS OrderTotal
-FROM 
-    Orders o
-JOIN 
-    Clients c ON o.ClientID = c.ClientID
-JOIN 
-    Distributors d ON o.DistributorID = d.DistributorID
-	
