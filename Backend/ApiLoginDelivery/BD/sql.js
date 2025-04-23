@@ -10,8 +10,8 @@ const config = {
     encrypt: true,
     trustServerCertificate: true,
   },
-  connectionTimeout: 30000,
-  requestTimeout: 30000, 
+  connectionTimeout: 50000,
+  requestTimeout: 50000, 
 };
 
 module.exports = config;

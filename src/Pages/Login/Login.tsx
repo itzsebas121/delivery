@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import "./auth.css"
-import {Link} from "react-router-dom"
+import { Link } from "react-router-dom"
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -49,14 +49,39 @@ export default function Login() {
     setErrors(newErrors)
     return valid
   }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (validateForm()) {
-      // Aquí iría la lógica para enviar los datos al servidor
-      console.log("Datos de inicio de sesión:", formData)
+      try {
+        const response = await fetch("https://api-login-delivery.vercel.app/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || "Error al iniciar sesión");
+        }
+
+        // Guardar token en localStorage
+        localStorage.setItem("jwtToken", data.token);
+        alert("Login exitoso");
+
+        // Aquí puedes redirigir o actualizar el estado de usuario
+      } catch (err) {
+       alert("Error al iniciar sesión:"+ (err as Error).message);
+        // Puedes mostrar el error al usuario también
+      }
     }
-  }
+  };
 
   return (
     <div className="auth-container">
