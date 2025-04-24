@@ -8,7 +8,7 @@ const Product = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(8);
+  const [limit] = useState<number>(8);
   const [nameFilter, setNameFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
 
