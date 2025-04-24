@@ -161,3 +161,20 @@ EXEC RegisterUser
     @Email = 'carlosperez@gmail.com', 
     @Password = 'cliente123';
 
+--
+--Vistas
+-- Vista de productos con categoría
+CREATE VIEW ProductWithCategory AS
+SELECT 
+    p.ProductId,
+    p.Name AS ProductName,
+    p.Description,
+    p.Price,
+    p.Stock,
+    p.ImageURL,
+    c.CategoryName
+FROM 
+    PRODUCTS p
+INNER JOIN 
+    CATEGORIES c ON p.CategoryId = c.CategoryId;
+GO
