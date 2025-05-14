@@ -1,11 +1,12 @@
-"use client"
-
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import "./auth.css"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { baseURLLogin } from "../../config"
+import { jwtDecode } from 'jwt-decode';
 
 export default function Login() {
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -14,6 +15,8 @@ export default function Login() {
     email: "",
     password: "",
   })
+
+  const navigate = useNavigate()  
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -49,40 +52,60 @@ export default function Login() {
     setErrors(newErrors)
     return valid
   }
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (validateForm()) {
       try {
-        const response = await fetch("https://api-login-delivery.vercel.app/login", {
+        const response = await fetch(`${baseURLLogin}/login`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             email: formData.email,
-            password: formData.password
-          })
-        });
+            password: formData.password,
+          }),
+        })
 
-        const data = await response.json();
+        const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.message || "Error al iniciar sesión");
+          throw new Error(data.message || "Error al iniciar sesión")
         }
 
-        // Guardar token en localStorage
-        localStorage.setItem("jwtToken", data.token);
-        alert("Login exitoso");
+        localStorage.setItem("token", data.token)
 
-        // Aquí puedes redirigir o actualizar el estado de usuario
+        const decodedToken = jwtDecode<{ role: string }>(data.token);
+        
+        if (decodedToken.role === "Client") {
+          navigate("/dashboard-cliente");
+        } else if (decodedToken.role === "Distributor") {
+          navigate("/dashboard-distribuidor");
+        } else {
+          alert("Rol no reconocido");
+        }
+       
       } catch (err) {
-       alert("Error al iniciar sesión:"+ (err as Error).message);
-        // Puedes mostrar el error al usuario también
+        alert( (err as Error).message)
       }
     }
-  };
+  }
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    const decodedToken = jwtDecode<{ role: string }>(token || "")
+    if (decodedToken.role === "Client") {
+      navigate("/dashboard-cliente")
+    } else if (decodedToken.role === "Distributor") {
+      navigate("/dashboard-distribuidor")
+    }
 
+
+  }, [])
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -171,7 +194,7 @@ export default function Login() {
               <span className="error-message">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
-                    d="M12 9V13M12 17H12.01M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
+                    d="M12 9V13M12 17H12.01M12 21C6.48 21 2 16.52 2 12C2 7.48 6.48 3 12 3C17.52 3 22 7.48 22 12C22 16.52 17.52 21 12 21Z"
                     stroke="#EF4444"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -187,7 +210,7 @@ export default function Login() {
             <label htmlFor="password">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
-                  d="M17 9V7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7V9M5 9H19C20.1046 9 21 9.89543 21 11V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V11C3 9.89543 3.89543 9 5 9Z"
+                  d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
                   stroke="#64748B"
                   strokeWidth="2"
                   strokeLinecap="round"
@@ -200,7 +223,7 @@ export default function Login() {
               <span className="input-icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
-                    d="M17 9V7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7V9M5 9H19C20.1046 9 21 9.89543 21 11V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V11C3 9.89543 3.89543 9 5 9Z"
+                    d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
                     stroke="#64748B"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -212,7 +235,7 @@ export default function Login() {
                 type="password"
                 id="password"
                 name="password"
-                placeholder="••••••••"
+                placeholder="********"
                 value={formData.password}
                 onChange={handleChange}
                 className={errors.password ? "input-error" : ""}
@@ -222,7 +245,7 @@ export default function Login() {
               <span className="error-message">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
-                    d="M12 9V13M12 17H12.01M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z"
+                    d="M12 9V13M12 17H12.01M12 21C6.48 21 2 16.52 2 12C2 7.48 6.48 3 12 3C17.52 3 22 7.48 22 12C22 16.52 17.52 21 12 21Z"
                     stroke="#EF4444"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -232,26 +255,14 @@ export default function Login() {
                 {errors.password}
               </span>
             )}
-            <div style={{ textAlign: "right", marginTop: "8px" }}>
-              <Link to="/recuperar" className="auth-link" style={{ fontSize: "14px" }}>
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
           </div>
 
-          <button type="submit" className="auth-button">
-            Iniciar Sesión
-          </button>
+          <button type="submit" className="auth-button">Iniciar sesión</button>
         </form>
 
-        <div className="auth-footer">
-          <p>
-            ¿No tienes una cuenta?{" "}
-            <Link to="/registro" className="auth-link">
-              Regístrate
-            </Link>
-          </p>
-        </div>
+        <p className="auth-footer">
+          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+        </p>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 import './index.css';
 import { useState, useEffect } from 'react';
-import { baseURLRest } from '../../config';
-import ProductCard from '../../components/ProductCard';
+import { baseURLRest } from '../../../config';
+import ProductCard from '../../../components/ProductCard';
 
 const Product = () => {
   // Estado para los productos y filtros
