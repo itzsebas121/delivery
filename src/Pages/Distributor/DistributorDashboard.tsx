@@ -1,7 +1,12 @@
+import NavbarDistributor from "../../components/NavbarDistributor";
+import { Outlet } from "react-router-dom";
 export default function DistributorDashboard() {
     return (
         <div>
-            <h1>Distributor Dashboard</h1>
+            <NavbarDistributor />
+            <div>
+                <Outlet/>
+            </div>
         </div>
     );
 }
