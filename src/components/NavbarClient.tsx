@@ -1,17 +1,21 @@
-"use client"
+import CartDropdownContent from "./CartDropdownContext"
 
 import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
+import { useCart } from "../context/cart-context"
 import "./index.css"
 
 const NavbarClient = () => {
   const { isAuthenticated, logout, tipoUsuario } = useAuth()
+  const { getItemsCount } = useCart()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [cartMenuOpen, setCartMenuOpen] = useState(false)
   const profileRef = useRef(null)
   const menuRef = useRef(null)
+  const cartRef = useRef(null)
 
   const handleLogout = () => {
     logout()
@@ -25,32 +29,43 @@ const NavbarClient = () => {
   const toggleProfileMenu = (e:any) => {
     e.stopPropagation()
     setProfileMenuOpen(!profileMenuOpen)
+    if (cartMenuOpen) setCartMenuOpen(false)
   }
 
+  const toggleCartMenu = (e:any) => {
+    e.stopPropagation()
+    setCartMenuOpen(!cartMenuOpen)
+    if (profileMenuOpen) setProfileMenuOpen(false)
+  }
+
+  // Cerrar menús al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileRef.current && 
-        !(profileRef.current as HTMLElement).contains(event.target as Node) &&
-        profileMenuOpen
-      ) {
+      if (profileRef.current && !(profileRef.current as HTMLElement).contains(event.target as Node) && profileMenuOpen) {
         setProfileMenuOpen(false)
       }
-      
+
+      if (cartRef.current && !(cartRef.current as HTMLElement).contains(event.target as Node) && cartMenuOpen) {
+        setCartMenuOpen(false)
+      }
+
       if (
-        menuRef.current && 
+        menuRef.current &&
         !(menuRef.current as HTMLElement).contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest('.nav__menu-toggle') &&
+        !(event.target as HTMLElement).closest(".nav__menu-toggle") &&
         menuOpen
       ) {
         setMenuOpen(false)
       }
     }
+    
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
-  }, [profileMenuOpen, menuOpen])
+  }, [profileMenuOpen, menuOpen, cartMenuOpen])
+  // Obtener el número de items en el carrito
+  const itemsCount = getItemsCount()
 
   return (
     <nav className="nav">
@@ -66,10 +81,7 @@ const NavbarClient = () => {
         </div>
       </div>
 
-      <ul 
-        ref={menuRef}
-        className={`nav__menu ${menuOpen ? "nav__menu--active" : ""}`}
-      >
+      <ul ref={menuRef} className={`nav__menu ${menuOpen ? "nav__menu--active" : ""}`}>
         <li className="nav__item">
           <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
             Inicio
@@ -78,11 +90,6 @@ const NavbarClient = () => {
         <li className="nav__item">
           <Link to="products" className="nav__link" onClick={() => setMenuOpen(false)}>
             Productos
-          </Link>
-        </li>
-        <li className="nav__item">
-          <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Historial
           </Link>
         </li>
         <li className="nav__item">
@@ -106,8 +113,31 @@ const NavbarClient = () => {
         )}
       </ul>
 
-      <div className="nav__actions" ref={profileRef}>
-        <div className="nav__profile">
+      <div className="nav__actions">
+        {/* Carrito de compras */}
+        <div className="nav__cart" ref={cartRef}>
+          <button className="nav__cart-button" onClick={toggleCartMenu}>
+            <div className="nav__cart-icon">
+              <span className="nav__cart-icon-svg">🛒</span>
+              {itemsCount > 0 && (
+                <span className="nav__cart-count">{itemsCount}</span>
+              )}
+            </div>
+          </button>
+
+          {cartMenuOpen && (
+            <div className="nav__dropdown nav__cart-dropdown">
+              <div className="nav__dropdown-arrow"></div>
+              <div className="nav__cart-header">
+                <h3>Mi Carrito</h3>
+              </div>
+              <CartDropdownContent />
+            </div>
+          )}
+        </div>
+
+        {/* Perfil de usuario */}
+        <div className="nav__profile" ref={profileRef}>
           <button className="nav__profile-button" onClick={toggleProfileMenu}>
             <div className="nav__profile-icon">
               <span className="nav__profile-initial">
@@ -115,7 +145,7 @@ const NavbarClient = () => {
               </span>
             </div>
           </button>
-          
+
           {profileMenuOpen && (
             <div className="nav__dropdown">
               <div className="nav__dropdown-arrow"></div>
@@ -146,5 +176,6 @@ const NavbarClient = () => {
     </nav>
   )
 }
+
 
 export default NavbarClient
