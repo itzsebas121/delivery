@@ -1,39 +1,150 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/Authcontext"; // Asegúrate que el nombre del archivo del contexto sea correcto.
-import "./index.css";
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from "../context/Authcontext"
+import "./index.css"
 
 const NavbarClient = () => {
-  const { isAuthenticated, logout, tipoUsuario } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated, logout, tipoUsuario } = useAuth()
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const profileRef = useRef(null)
+  const menuRef = useRef(null)
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");  
-  };
+    logout()
+    navigate("/login")
+  }
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen)
+  }
+
+  const toggleProfileMenu = (e:any) => {
+    e.stopPropagation()
+    setProfileMenuOpen(!profileMenuOpen)
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileRef.current && 
+        !(profileRef.current as HTMLElement).contains(event.target as Node) &&
+        profileMenuOpen
+      ) {
+        setProfileMenuOpen(false)
+      }
+      
+      if (
+        menuRef.current && 
+        !(menuRef.current as HTMLElement).contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest('.nav__menu-toggle') &&
+        menuOpen
+      ) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [profileMenuOpen, menuOpen])
 
   return (
-    <nav className="navbar">
-      <div className="navbar-logo">
+    <nav className="nav">
+      <div className="nav__logo">
         <h1>My Website</h1>
       </div>
-      <ul className="navbar-list">
-        <li><Link to="/dashboard-cliente">Inicio</Link></li>
-        <li><Link to="products">Productos</Link></li>
-        <li><Link to="contact">Contactos</Link></li>
+
+      <div className="nav__menu-toggle" onClick={toggleMenu}>
+        <div className={`nav__hamburger ${menuOpen ? "nav__hamburger--active" : ""}`}>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <ul 
+        ref={menuRef}
+        className={`nav__menu ${menuOpen ? "nav__menu--active" : ""}`}
+      >
+        <li className="nav__item">
+          <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Inicio
+          </Link>
+        </li>
+        <li className="nav__item">
+          <Link to="products" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Productos
+          </Link>
+        </li>
+        <li className="nav__item">
+          <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Historial
+          </Link>
+        </li>
+        <li className="nav__item">
+          <Link to="contact" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Contactos
+          </Link>
+        </li>
         {isAuthenticated && tipoUsuario === "Distribuidor" && (
-          <li><Link to="/dashboard-distribuidor">Distribuidor</Link></li>
+          <li className="nav__item">
+            <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
+              Distribuidor
+            </Link>
+          </li>
         )}
         {isAuthenticated && tipoUsuario === "Cliente" && (
-          <li><Link to="/dashboard-cliente">Mi Cuenta</Link></li>
+          <li className="nav__item">
+            <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
+              Mi Cuenta
+            </Link>
+          </li>
         )}
       </ul>
 
-      <div className="buttons">
-          <button onClick={handleLogout}>Cerrar sesión</button>
-        
+      <div className="nav__actions" ref={profileRef}>
+        <div className="nav__profile">
+          <button className="nav__profile-button" onClick={toggleProfileMenu}>
+            <div className="nav__profile-icon">
+              <span className="nav__profile-initial">
+                {tipoUsuario === "Cliente" ? "C" : tipoUsuario === "Distribuidor" ? "D" : "U"}
+              </span>
+            </div>
+          </button>
+          
+          {profileMenuOpen && (
+            <div className="nav__dropdown">
+              <div className="nav__dropdown-arrow"></div>
+              <ul className="nav__dropdown-menu">
+                <li className="nav__dropdown-item">
+                  <Link to="/profile" className="nav__dropdown-link">
+                    <span className="nav__dropdown-icon">👤</span>
+                    Mi Perfil
+                  </Link>
+                </li>
+                <li className="nav__dropdown-item">
+                  <Link to="/settings" className="nav__dropdown-link">
+                    <span className="nav__dropdown-icon">⚙️</span>
+                    Configuración
+                  </Link>
+                </li>
+                <li className="nav__dropdown-item nav__dropdown-item--danger">
+                  <button onClick={handleLogout} className="nav__dropdown-button">
+                    <span className="nav__dropdown-icon">🚪</span>
+                    Cerrar sesión
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
-  );
-};
+  )
+}
 
-export default NavbarClient;
+export default NavbarClient

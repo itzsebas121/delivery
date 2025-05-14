@@ -51,59 +51,89 @@ const Product = () => {
   // Controlar los filtros
   const handleNameFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNameFilter(e.target.value);
+    setPage(1); 
   };
 
   const handleCategoryFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCategoryFilter(e.target.value);
+    setPage(1); 
   };
 
   return (
-    <div>
-      <h1>Productos</h1>
-
-      {/* Filtros */}
-      <div className="filters">
-        <input
-          type="text"
-          placeholder="Buscar por nombre"
-          value={nameFilter}
-          onChange={handleNameFilterChange}
-        />
-        <input
-          type="text"
-          placeholder="Buscar por categoría"
-          value={categoryFilter}
-          onChange={handleCategoryFilterChange}
-        />
+    <div className="product-container">
+      <div className="product-header">
+        <h1 className="product-title">Productos</h1>
+        
+        {/* Filtros */}
+        <div className="product-filters">
+          <div className="product-search">
+            <span className="product-search-icon">🔍</span>
+            <input
+              type="text"
+              placeholder="Buscar por nombre"
+              value={nameFilter}
+              onChange={handleNameFilterChange}
+              className="product-input"
+            />
+          </div>
+          <div className="product-search">
+            <span className="product-search-icon">📂</span>
+            <input
+              type="text"
+              placeholder="Buscar por categoría"
+              value={categoryFilter}
+              onChange={handleCategoryFilterChange}
+              className="product-input"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Productos */}
-      <div className="product-list">
-        {loading ? (
+      {loading ? (
+        <div className="product-loading">
+          <div className="product-loader"></div>
           <p>Cargando productos...</p>
-        ) : (
-          products.map((product: any) => (
-            <ProductCard
-              key={product.ProductId}
-              productId={product.ProductId}
-              productName={product.ProductName}
-              description={product.Description}
-              price={product.Price}
-              stock={product.Stock}
-              imageURL={product.ImageURL}
-              categoryName={product.CategoryName}
-            />
-          ))
-        )}
-      </div>
+        </div>
+      ) : products.length > 0 ? (
+        <div className="product-grid">
+          {products.map((product: any) => (
+            <div className="product-card-wrapper" key={product.ProductId}>
+              <ProductCard
+                productId={product.ProductId}
+                productName={product.ProductName}
+                description={product.Description}
+                price={product.Price}
+                stock={product.Stock}
+                imageURL={product.ImageURL}
+                categoryName={product.CategoryName}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="product-empty">
+          <p>No se encontraron productos con los filtros seleccionados.</p>
+        </div>
+      )}
 
       {/* Paginación */}
-      <div className="pagination">
-        <button onClick={handlePrevPage} disabled={page === 1}>
-          Anterior
+      <div className="product-pagination">
+        <button 
+          className="product-pagination-btn" 
+          onClick={handlePrevPage} 
+          disabled={page === 1}
+        >
+          ← 
         </button>
-        <span>Página {page}</span>
-        <button onClick={handleNextPage}>Siguiente</button>
+        <span className="product-pagination-info">{page}</span>
+        <button 
+          className="product-pagination-btn" 
+          onClick={handleNextPage}
+          disabled={products.length < limit}
+        >
+           →
+        </button>
       </div>
     </div>
   );
