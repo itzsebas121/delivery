@@ -8,7 +8,6 @@ import Registro from "./Pages/Login/Registro"
 import HomeClient from "./Pages/Client/HomeClient"
 import ContactClient from "./Pages/Client/ContactClient"
 
-import BuyComponent from "./Pages/Client/Components/BuyComponent"
 
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
