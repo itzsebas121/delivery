@@ -1,14 +1,13 @@
-import CartDropdownContent from "./CartDropdownContext"
-
 import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import { useCart } from "../context/cart-context"
 import "./index.css"
+import CartDropdownContent from "./CartDropdownContext"
 
 const NavbarClient = () => {
   const { isAuthenticated, logout, tipoUsuario } = useAuth()
-  const { getItemsCount } = useCart()
+  const { cartItems, getItemsCount } = useCart()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -16,6 +15,14 @@ const NavbarClient = () => {
   const profileRef = useRef(null)
   const menuRef = useRef(null)
   const cartRef = useRef(null)
+
+  // Estado local para forzar re-renderizado
+  const [, setCartUpdateTrigger] = useState(0)
+
+  // Forzar re-renderizado cuando cambia cartItems
+  useEffect(() => {
+    setCartUpdateTrigger((prev) => prev + 1)
+  }, [cartItems])
 
   const handleLogout = () => {
     logout()
@@ -26,13 +33,13 @@ const NavbarClient = () => {
     setMenuOpen(!menuOpen)
   }
 
-  const toggleProfileMenu = (e:any) => {
+  const toggleProfileMenu = (e: any) => {
     e.stopPropagation()
     setProfileMenuOpen(!profileMenuOpen)
     if (cartMenuOpen) setCartMenuOpen(false)
   }
 
-  const toggleCartMenu = (e:any) => {
+  const toggleCartMenu = (e: any) => {
     e.stopPropagation()
     setCartMenuOpen(!cartMenuOpen)
     if (profileMenuOpen) setProfileMenuOpen(false)
@@ -41,7 +48,11 @@ const NavbarClient = () => {
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileRef.current && !(profileRef.current as HTMLElement).contains(event.target as Node) && profileMenuOpen) {
+      if (
+        profileRef.current &&
+        !(profileRef.current as HTMLElement).contains(event.target as Node) &&
+        profileMenuOpen
+      ) {
         setProfileMenuOpen(false)
       }
 
@@ -58,14 +69,18 @@ const NavbarClient = () => {
         setMenuOpen(false)
       }
     }
-    
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [profileMenuOpen, menuOpen, cartMenuOpen])
+
   // Obtener el número de items en el carrito
   const itemsCount = getItemsCount()
+
+ 
+
+
 
   return (
     <nav className="nav">
@@ -114,14 +129,13 @@ const NavbarClient = () => {
       </ul>
 
       <div className="nav__actions">
+       
         {/* Carrito de compras */}
         <div className="nav__cart" ref={cartRef}>
           <button className="nav__cart-button" onClick={toggleCartMenu}>
             <div className="nav__cart-icon">
               <span className="nav__cart-icon-svg">🛒</span>
-              {itemsCount > 0 && (
-                <span className="nav__cart-count">{itemsCount}</span>
-              )}
+              {itemsCount > 0 && <span className="nav__cart-count">{itemsCount}</span>}
             </div>
           </button>
 
@@ -129,9 +143,11 @@ const NavbarClient = () => {
             <div className="nav__dropdown nav__cart-dropdown">
               <div className="nav__dropdown-arrow"></div>
               <div className="nav__cart-header">
-                <h3>Mi Carrito</h3>
+                <h3>Mi Carrito ({cartItems.length})</h3>
               </div>
-              <CartDropdownContent />
+              <div className="nav__cart-content">
+                <CartDropdownContent />
+              </div>
             </div>
           )}
         </div>
@@ -176,6 +192,5 @@ const NavbarClient = () => {
     </nav>
   )
 }
-
 
 export default NavbarClient

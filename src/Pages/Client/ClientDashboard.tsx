@@ -9,7 +9,9 @@ export default function ClientDashboard() {
 
             </CartProvider>
             <div>
-                <Outlet />
+                <CartProvider>
+                    <Outlet />
+                </CartProvider>
             </div>
         </div>
     );

@@ -15,21 +15,33 @@ app.use(
   })
 );
 
+// Función para conectar a la base de datos
+const connectToDatabase = async () => {
+  try {
+    const pool = await sql.connect(config);
+    console.log("Conexión a la base de datos establecida");
+    return pool;
+  } catch (err) {
+    console.error("Error al conectar con la base de datos", err);
+    // Intentar reconectar cada 5 segundos si la conexión falla
+    setTimeout(() => connectToDatabase(), 5000);
+    return null;
+  }
+};
+
 // Conexión a la base de datos y arranque del servidor solo tras conexión exitosa
 let pool;
-sql.connect(config)
-  .then((p) => {
-    pool = p;
-    console.log("Conexión a la base de datos establecida");
-
+connectToDatabase().then((p) => {
+  pool = p;
+  if (pool) {
+    // Arrancar el servidor solo cuando la conexión sea exitosa
     app.listen(port, () => {
-      console.log(`Server ready on http://localhost:${port}`);
+      console.log(`Servidor escuchando en http://localhost:${port}`);
     });
-  })
-  .catch((err) => {
-    console.error("Error al conectar con la base de datos", err);
-    process.exit(1);
-  });
+  } else {
+    console.log("No se pudo conectar a la base de datos. El servidor no se iniciará.");
+  }
+});
 
 // Middleware para verificar disponibilidad de la BD antes de manejar rutas
 app.use((req, res, next) => {
@@ -38,12 +50,13 @@ app.use((req, res, next) => {
   }
   next();
 });
+
 // Endpoint para obtener productos con paginación y filtros (solo nombre y categoría)
 app.get("/products", async (req, res) => {
   try {
-    const pageNum  = parseInt(req.query.page?.toString()) || 1;
+    const pageNum = parseInt(req.query.page?.toString()) || 1;
     const limitNum = parseInt(req.query.limit?.toString()) || 10;
-    const name     = req.query.name?.toString() || "";
+    const name = req.query.name?.toString() || "";
     const category = req.query.category?.toString() || "";
 
     const offset = (pageNum - 1) * limitNum;
@@ -54,17 +67,17 @@ app.get("/products", async (req, res) => {
       WHERE 1=1
     `;
 
-    if (name)     query += ` AND ProductName   LIKE @Name`;
-    if (category) query += ` AND CategoryName  LIKE @Category`;
+    if (name) query += ` AND ProductName LIKE @Name`;
+    if (category) query += ` AND CategoryName LIKE @Category`;
 
     query += ` ORDER BY ProductId
                OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`;
 
     const request = pool.request()
-      .input("Name",     sql.VarChar, `%${name}%`)
+      .input("Name", sql.VarChar, `%${name}%`)
       .input("Category", sql.VarChar, `%${category}%`)
-      .input("Offset",   sql.Int,     offset)
-      .input("Limit",    sql.Int,     limitNum);
+      .input("Offset", sql.Int, offset)
+      .input("Limit", sql.Int, limitNum);
 
     const result = await request.query(query);
     res.json(result.recordset);
@@ -73,6 +86,8 @@ app.get("/products", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
+// Endpoint para crear un nuevo producto
 app.post("/create-products", async (req, res) => {
   try {
     const { Name, Description, Price, Stock, ImageURL, CategoryId } = req.body;
@@ -92,6 +107,70 @@ app.post("/create-products", async (req, res) => {
   }
 });
 
+// Endpoint para crear una orden a partir de un carrito
+app.post("/create-order-from-cart", async (req, res) => {
+  try {
+    const { cartId, deliveryAddress } = req.body;
+
+    if (!cartId || !deliveryAddress) {
+      return res.status(400).json({ message: "Faltan datos obligatorios: cartId y deliveryAddress" });
+    }
+
+    const request = pool.request()
+      .input("CartId", sql.Int, cartId)
+      .input("DeliveryAddress", sql.VarChar(255), deliveryAddress);
+
+    const result = await request.execute("CreateOrderFromCart");
+
+    // El procedimiento devuelve el OrderId en un SELECT
+    const orderId = result.recordset[0]?.OrderId;
+
+    if (!orderId) {
+      return res.status(500).json({ message: "No se pudo crear la orden" });
+    }
+
+    res.status(201).json({ message: "Orden creada exitosamente", orderId });
+  } catch (err) {
+    console.error("Error al crear orden desde carrito:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+
+app.post("/cart-add", async (req, res) => {
+  try {
+    const { ClientId, ProductId, Quantity } = req.body;
+
+    const request = pool.request()
+      .input("ClientId", sql.Int, ClientId)
+      .input("ProductId", sql.Int, ProductId)
+      .input("Quantity", sql.Int, Quantity);
+
+    await request.execute("AddProductToCart");
+
+    res.status(200).json({ message: "Producto agregado al carrito" });
+  } catch (err) {
+    console.error("Error al agregar al carrito:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+app.get("/get-cart/:clientId", async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    const request = pool.request()
+      .input("ClientId", sql.Int, clientId);
+
+    const result = await request.execute("GetCartByClient");
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener el carrito:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+
 // Endpoint para crear una nueva categoría
 app.post("/categories", async (req, res) => {
   try {
@@ -103,6 +182,92 @@ app.post("/categories", async (req, res) => {
     res.status(201).json({ message: "Categoría creada exitosamente" });
   } catch (err) {
     console.error("Error al crear categoría:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+// Endpoint para actualizar una categoría existente
+app.put("/categories/:id", async (req, res) => {
+  try {
+    const categoryId = parseInt(req.params.id);
+    const { CategoryName } = req.body;
+
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ message: "ID de categoría inválido" });
+    }
+
+    const request = pool.request()
+      .input("CategoryId", sql.Int, categoryId)
+      .input("CategoryName", sql.VarChar(100), CategoryName);
+
+    await request.execute("UpdateCategory");
+
+    res.status(200).json({ message: "Categoría actualizada exitosamente" });
+  } catch (err) {
+    console.error("Error al actualizar categoría:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+// Endpoint para eliminar una categoría
+app.delete("/categories/:id", async (req, res) => {
+  try {
+    const categoryId = parseInt(req.params.id);
+
+    if (isNaN(categoryId)) {
+      return res.status(400).json({ message: "ID de categoría inválido" });
+    }
+
+    const request = pool.request()
+      .input("CategoryId", sql.Int, categoryId);
+
+    await request.execute("DeleteCategory");
+
+    res.status(200).json({ message: "Categoría eliminada exitosamente" });
+  } catch (err) {
+    console.error("Error al eliminar categoría:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+// Endpoint para eliminar un item del carrito
+app.delete("/cart-item/:cartId/:productId", async (req, res) => {
+  try {
+    const { cartId, productId } = req.params;
+
+    if (!cartId || !productId) {
+      return res.status(400).json({ message: "Faltan parámetros requeridos" });
+    }
+
+    const request = pool.request()
+      .input("CartId", sql.Int, parseInt(cartId))
+      .input("ProductId", sql.Int, parseInt(productId));
+
+    await request.execute("DeleteCartItem");
+
+    res.status(200).json({ message: "Item eliminado del carrito correctamente" });
+  } catch (err) {
+    console.error("Error al eliminar item del carrito:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// Endpoint para actualizar la cantidad de un item en el carrito
+app.put("/cart-item", async (req, res) => {
+  try {
+    const { CartId, ProductId, Quantity } = req.body;
+
+    if (!CartId || !ProductId || Quantity == null || Quantity < 0) {
+      return res.status(400).json({ message: "Datos inválidos o incompletos" });
+    }
+
+    const request = pool.request()
+      .input("CartId", sql.Int, CartId)
+      .input("ProductId", sql.Int, ProductId)
+      .input("NewQuantity", sql.Int, Quantity);
+
+    await request.execute("UpdateCartItemQuantity");
+
+    res.status(200).json({ message: "Cantidad actualizada exitosamente" });
+  } catch (err) {
+    console.error("Error al actualizar item del carrito:", err);
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
@@ -130,6 +295,35 @@ app.get("/clients", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
+// Endpoint para obtener todas las ventas
+app.get("/sales", async (req, res) => {
+  try {
+    const request = pool.request();
+    const result = await request.execute("GetAllSales");
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener ventas:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// Endpoint para obtener detalles de la orden por ID
+app.get("/orders-details/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const request = pool.request();
+    request.input("OrderId", sql.Int, id);
+    const result = await request.execute("GetFullOrderById");
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener la orden:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
 // Cerrar conexiones cuando el proceso termine
 process.on("SIGINT", async () => {
   try {
@@ -139,9 +333,4 @@ process.on("SIGINT", async () => {
     console.error("Error al cerrar las conexiones:", err);
   }
   process.exit();
-});
-
-// Iniciar el servidor
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
 });

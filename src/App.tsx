@@ -8,11 +8,14 @@ import Registro from "./Pages/Login/Registro"
 import HomeClient from "./Pages/Client/HomeClient"
 import ContactClient from "./Pages/Client/ContactClient"
 
+import BuyComponent from "./Pages/Client/Components/BuyComponent"
+
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
 import DeliveryDistributor from "./Pages/Distributor/DeliveryDistributor"
 import HistoryDistributor from "./Pages/Distributor/HistoryDistributor"
 import OrdersDistributor from "./Pages/Distributor/OrdersDistributor"
+
 function App() {
   return (
     <Router>
@@ -24,8 +27,9 @@ function App() {
         <Route path="/dashboard-cliente" element={<ClientDashboard />}>
           <Route index element={<HomeClient />} />
           <Route path="home" element={<HomeClient />} />
-          <Route path="products" element={<Product />} />
+          <Route path="products" element={<Product clienteId={1} />} />
           <Route path="contact" element={<ContactClient />} />
+          
         </Route>
 
 
