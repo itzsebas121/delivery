@@ -1,7 +1,7 @@
-import { baseURLRest } from "../config";
+import { baseURLRest } from "../../../config";
 import { useState, useEffect, useRef } from "react";
 import './CartDropdownContext.css';
-import CheckoutModal from "./CheckoutModal";
+import CheckoutModal from "../Payment/CheckoutModal";
 
 type CartItem = {
   ProductId: number;
@@ -24,7 +24,6 @@ const CartDropdownContent = () => {
         if (!response.ok) throw new Error("No se pudo obtener el carrito");
         const data = await response.json();
 
-        // Si data es null o no tiene elementos, setear array vacío
         if (!data || (Array.isArray(data) && data.length === 0)) {
           setCartItems([]);
         } else {
@@ -32,7 +31,7 @@ const CartDropdownContent = () => {
         }
       } catch (error) {
         console.error("Error al obtener el carrito:", error);
-        setCartItems([]); // También vaciar en caso de error para mostrar mensaje
+        setCartItems([]);
       }
     };
 

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import { useCart } from "../context/cart-context"
 import "./index.css"
-import CartDropdownContent from "./CartDropdownContext"
+import CartDropdownContent from "../Pages/Client/Cart/CartDropdownContext"
 
 const NavbarClient = () => {
   const { isAuthenticated, logout, tipoUsuario } = useAuth()

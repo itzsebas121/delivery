@@ -12,7 +12,6 @@ const CartPage = () => {
   const [couponApplied, setCouponApplied] = useState(false)
   const [discount, setDiscount] = useState(0)
 
-  // Manejar cambio de cantidad
   const handleQuantityChange = (productId: number, newQuantity: number) => {
     if (newQuantity < 1) return
     updateQuantity(productId, newQuantity)
