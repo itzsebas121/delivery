@@ -108,6 +108,11 @@ const NavbarClient = () => {
           </Link>
         </li>
         <li className="nav__item">
+          <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Historial
+          </Link>
+        </li>
+        <li className="nav__item">
           <Link to="contact" className="nav__link" onClick={() => setMenuOpen(false)}>
             Contactos
           </Link>

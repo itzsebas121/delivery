@@ -323,6 +323,36 @@ app.get("/orders-details/:id", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+app.get("/product-history/:clientId", async (req, res) => {
+  try {
+    const { clientId } = req.params;
+
+    const request = pool.request()
+      .input("ClientId", sql.Int, clientId);
+
+    const result = await request.execute("GetProductHistoryByClient");
+
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener historial de productos:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+app.get("/order-detail/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const request = pool.request()
+      .input("OrderId", sql.Int, orderId);
+
+    const result = await request.execute("GetOrderDetail");
+
+    res.status(200).json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener detalle del pedido:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
 
 // Cerrar conexiones cuando el proceso termine
 process.on("SIGINT", async () => {

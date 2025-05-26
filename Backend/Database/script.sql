@@ -213,6 +213,27 @@ BEGIN
   END CATCH
 END;
 GO
+CREATE OR ALTER PROCEDURE GetProductHistoryByClient
+    @ClientId INT
+AS
+BEGIN
+    SELECT 
+        O.OrderId,
+        O.OrderDate,
+        O.Status,
+        P.ProductId,
+        P.Name AS ProductName,
+        CI.Quantity,
+        CI.Price,
+        (CI.Quantity * CI.Price) AS Subtotal
+    FROM ORDERS O
+    JOIN Carts C ON C.ClientId = O.ClientId
+    JOIN CartItems CI ON CI.CartId = C.CartId
+    JOIN PRODUCTS P ON P.ProductId = CI.ProductId
+    WHERE O.ClientId = @ClientId
+    ORDER BY O.OrderDate DESC;
+END;
+
 
 
 CREATE OR ALTER PROCEDURE AddProductToCart
@@ -345,6 +366,20 @@ BEGIN
   END CATCH
 END;
 GO
+CREATE OR ALTER PROCEDURE GetOrderDetail
+    @OrderId INT
+AS
+BEGIN
+    SELECT 
+        P.ProductId,
+        P.Name AS ProductName,
+        OD.Quantity,
+        OD.UnitPrice AS Price,
+        (OD.Quantity * OD.UnitPrice) AS Subtotal
+    FROM order_Details OD
+    JOIN PRODUCTS P ON P.ProductId = OD.ProductId
+    WHERE OD.OrderId = @OrderId;
+END;
 
 
 CREATE PROCEDURE AssignDelivery

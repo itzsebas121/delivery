@@ -7,7 +7,7 @@ import NotFound from "./Pages/NotFound"
 import Registro from "./Pages/Login/Registro"
 import HomeClient from "./Pages/Client/HomeClient"
 import ContactClient from "./Pages/Client/ContactClient"
-
+import OrderHistory from "./Pages/Client/History/order-history"
 
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
@@ -28,7 +28,7 @@ function App() {
           <Route path="home" element={<HomeClient />} />
           <Route path="products" element={<Product clienteId={1} />} />
           <Route path="contact" element={<ContactClient />} />
-          
+          <Route path="history" element={<OrderHistory clientId={1}/>} />
         </Route>
 
 

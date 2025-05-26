@@ -92,17 +92,19 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }
 
   const handleTraditionalPay = async () => {
-    console.log("🏦 Iniciando pago tradicional...")
 
     if (!validateForm()) return
 
     setLoading(true)
     setMessage("Procesando pago tradicional...")
     setMessageType("success")
-    console.log("📤 Enviando orden tradicional al servidor...")
+    await sendPayMentData()
 
+  }
+  const sendPayMentData = async () => {
     try {
       const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -128,53 +130,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
       setMessage("Error al procesar el pago. Intenta nuevamente.")
       setMessageType("error")
     }
-  }
 
-  const handlePayPalSuccess = async (paymentResult: any) => {
-    console.log("🎉 Pago PayPal exitoso recibido:", paymentResult)
+  }
+  const handlePayPalSuccess = async () => {
     setLoading(true)
     setMessage("Procesando pago de PayPal...")
     setMessageType("success")
-
-    try {
-      console.log("📤 Enviando confirmación de pago PayPal al servidor...")
-
-      const res = await fetch(`${baseURLRest}/create-order-from-cart-paypal`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cartId: cartId,
-          clientId: clientId,
-          deliveryAddress: deliveryAddress.trim(),
-          paypalOrderId: paymentResult.id,
-          paypalPayerId: paymentResult.payer?.payer_id,
-          paypalPaymentId: paymentResult.purchase_units?.[0]?.payments?.captures?.[0]?.id,
-          amount: getTotal(),
-          paymentDetails: paymentResult,
-        }),
-      })
-
-      if (!res.ok) {
-        throw new Error("Error al confirmar el pago con PayPal")
-      }
-
-      const result = await res.json()
-      console.log("✅ Orden PayPal confirmada en servidor:", result)
-
-      setMessage(`¡Pago con PayPal exitoso! Orden ID: ${result.orderId}`)
-      setMessageType("success")
-
-      setTimeout(() => {
-        setLoading(false)
-        onClose()
-      }, 3000)
-    } catch (error) {
-      console.error("❌ Error al confirmar pago PayPal:", error)
-      setLoading(false)
-      setMessage("Error al confirmar el pago con PayPal")
-      setMessageType("error")
-      setCurrentStep("form")
-    }
+    await sendPayMentData();
   }
 
   const handlePayPalError = (error: any) => {
@@ -185,7 +147,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }
 
   const handlePayPalCancel = () => {
-    console.log("🚫 Pago PayPal cancelado por el usuario")
     setMessage("Pago cancelado")
     setMessageType("warning")
     setCurrentStep("form")
@@ -194,7 +155,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   const handleProceedToPayment = () => {
     if (!validateForm()) return
 
-    console.log("➡️ Procediendo al pago con método:", paymentMethod)
     setMessage(null)
 
     if (paymentMethod === "traditional") {
@@ -291,12 +251,12 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                       className="checkout-input"
                       disabled={loading}
                     />
-                  {message && (
-                    <div role="alert" className={`checkout-message ${messageType}`}>
-                      {getMessageIcon()}
-                      {message}
-                    </div>
-                  )}
+                    {message && (
+                      <div role="alert" className={`checkout-message ${messageType}`}>
+                        {getMessageIcon()}
+                        {message}
+                      </div>
+                    )}
                   </div>
                   {/* Métodos de pago */}
                   <div className="checkout-payment-methods">
@@ -367,14 +327,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                       </>
                     ) : (
                       <>
-                        <Building2 size={20} />
                         Confirmar Pago Tradicional
                       </>
                     )}
+                        <Building2 size={20} />
                   </button>
                 </>
               ) : (
-                /* Paso de pago PayPal */
                 <div>
                   <div className="checkout-paypal-section">
                     <h3 className="checkout-paypal-title">
