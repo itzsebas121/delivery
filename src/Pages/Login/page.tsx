@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Login from "./Login"
 import Registro from "./Registro"
-import "./auth.css"
+import "./Login.css"
 
 export default function Page() {
   const [showLogin, setShowLogin] = useState(true)

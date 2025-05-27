@@ -1,0 +1,413 @@
+/* Estilos específicos para Login */
+@import "../../StylesGeneral/style.css";
+
+/* Reset y base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  line-height: 1.6;
+  color: var(--dark-gray);
+  min-height: 100vh;
+  background: var(--light-gray);
+}
+
+/* Contenedor principal de autenticación */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xl);
+  background: var(--gradient-warm);
+  position: relative;
+}
+
+.auth-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Tarjeta de autenticación */
+.auth-card {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  padding: var(--spacing-2xl);
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideInLeft var(--transition-slow) ease-out;
+}
+
+/* Logo */
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.auth-logo svg {
+  width: 56px;
+  height: 56px;
+  filter: drop-shadow(0 4px 8px rgba(255, 107, 53, 0.3));
+}
+
+/* Títulos */
+.auth-title {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  text-align: center;
+  color: var(--dark-gray);
+  margin-bottom: var(--spacing-md);
+  background: var(--gradient-warm);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--medium-gray);
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+  font-weight: 400;
+}
+
+/* Botones sociales */
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.social-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  color: var(--dark-gray);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+}
+
+.social-button:hover {
+  border-color: var(--primary-orange);
+  background: var(--accent-cream);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.social-button:active {
+  transform: translateY(0);
+}
+
+/* Divisor */
+.auth-divider {
+  position: relative;
+  text-align: center;
+  margin: var(--spacing-xl) 0;
+  color: var(--medium-gray);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+}
+
+.auth-divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--light-gray);
+  z-index: 1;
+}
+
+.auth-divider::after {
+  content: attr(data-text);
+  background: var(--white);
+  padding: 0 var(--spacing-lg);
+  position: relative;
+  z-index: 2;
+}
+
+/* Formulario */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--dark-gray);
+}
+
+.form-group label svg {
+  color: var(--primary-orange);
+}
+
+/* Input wrapper */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: var(--spacing-lg);
+  z-index: 2;
+  color: var(--medium-gray);
+  transition: color var(--transition-normal);
+}
+
+.input-wrapper:focus-within .input-icon {
+  color: var(--primary-orange);
+}
+
+/* Inputs */
+.input-wrapper input {
+  width: 100%;
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem;
+  border: 2px solid var(--light-gray);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  background: var(--white);
+  transition: all var(--transition-normal);
+  outline: none;
+  font-family: var(--font-family);
+}
+
+.input-wrapper input:focus {
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
+}
+
+.input-wrapper input.input-error {
+  border-color: var(--error);
+}
+
+.input-wrapper input.input-error:focus {
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.1);
+}
+
+.input-wrapper input::placeholder {
+  color: var(--medium-gray);
+}
+
+/* Mensajes de error */
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  color: var(--error);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
+  font-weight: 500;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+}
+
+/* Botón principal */
+.auth-button {
+  width: 100%;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  background: var(--gradient-warm);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  margin-top: var(--spacing-md);
+}
+
+.auth-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.auth-button:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-button:hover::before {
+  left: 100%;
+}
+
+.auth-button:active {
+  transform: translateY(-1px);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Footer */
+.auth-footer {
+  text-align: center;
+  margin-top: var(--spacing-xl);
+  font-size: var(--font-size-base);
+  color: var(--medium-gray);
+}
+
+.auth-footer a {
+  color: var(--primary-orange);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color var(--transition-normal);
+}
+
+.auth-footer a:hover {
+  color: var(--primary-red);
+  text-decoration: underline;
+}
+
+/* Animaciones */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: var(--spacing-lg);
+  }
+
+  .auth-card {
+    padding: var(--spacing-xl);
+    max-width: 100%;
+  }
+
+  .social-buttons {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-2xl);
+  }
+
+  .auth-subtitle {
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+  }
+
+  .auth-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .input-wrapper input {
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 3rem;
+  }
+
+  .input-icon {
+    left: var(--spacing-md);
+  }
+}
+
+/* Estados de carga */
+.auth-button.loading {
+  position: relative;
+  color: transparent;
+}
+
+.auth-button.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 3px solid transparent;
+  border-top: 3px solid var(--white);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Mejoras de accesibilidad */
+.auth-button:focus,
+.social-button:focus,
+.input-wrapper input:focus {
+  outline: 2px solid var(--primary-orange);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

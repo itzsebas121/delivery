@@ -1,5 +1,4 @@
-import type React from "react"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
   CreditCard,
   MapPin,
@@ -16,8 +15,8 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { baseURLRest } from "../../../config"
-import PayPal from "./PayPal/Paypal"
 import "./checkout-modal.css"
+import PayPal from "./PayPal/Paypal"
 
 type CartItem = {
   ProductId: number
@@ -43,20 +42,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   const [currentStep, setCurrentStep] = useState<"form" | "payment">("form")
 
   useEffect(() => {
-    console.log("🔄 Iniciando carga del carrito para cliente:", clientId)
     async function fetchCart() {
       try {
         const res = await fetch(`${baseURLRest}/get-cart/${clientId}`)
         if (!res.ok) throw new Error("No se pudo obtener el carrito")
         const data: CartItem[] = await res.json()
-        console.log("✅ Carrito cargado exitosamente:", data)
         setCartItems(data)
         if (data.length > 0) {
           setCartId(data[0].CartId)
-          console.log("📦 Cart ID establecido:", data[0].CartId)
         }
       } catch (error) {
-        console.error("❌ Error al cargar el carrito:", error)
         setMessage("Error al cargar el carrito")
         setMessageType("error")
       }
@@ -65,16 +60,19 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }, [clientId])
 
   useEffect(() => {
-    console.log("🔄 Método de pago cambiado a:", paymentMethod)
+    return () => {
+      console.log("Modal desmontado (se cerró desde afuera)");
+    }
+  }, [])
+
+  useEffect(() => {
     setCurrentStep("form")
     setMessage(null)
     setLoading(false)
   }, [paymentMethod])
 
   const getTotal = () => {
-    const total = cartItems.reduce((acc, item) => acc + (item.Price ?? 0) * (item.Quantity ?? 0), 0)
-    console.log("💰 Total calculado:", total)
-    return total
+    return cartItems.reduce((acc, item) => acc + (item.Price ?? 0) * (item.Quantity ?? 0), 0)
   }
 
   const validateForm = () => {
@@ -92,19 +90,16 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }
 
   const handleTraditionalPay = async () => {
-
     if (!validateForm()) return
-
     setLoading(true)
     setMessage("Procesando pago tradicional...")
     setMessageType("success")
     await sendPayMentData()
-
   }
+
   const sendPayMentData = async () => {
     try {
       const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
-
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,8 +110,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
 
       if (!res.ok) throw new Error("Error al crear la orden")
       const result = await res.json()
-
-      console.log("✅ Orden tradicional creada exitosamente:", result)
       setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
       setMessageType("success")
 
@@ -125,22 +118,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
         onClose()
       }, 2500)
     } catch (error) {
-      console.error("❌ Error en pago tradicional:", error)
       setLoading(false)
       setMessage("Error al procesar el pago. Intenta nuevamente.")
       setMessageType("error")
     }
-
   }
+
   const handlePayPalSuccess = async () => {
     setLoading(true)
     setMessage("Procesando pago de PayPal...")
     setMessageType("success")
-    await sendPayMentData();
+    await sendPayMentData()
   }
 
-  const handlePayPalError = (error: any) => {
-    console.error("❌ Error en PayPal:", error)
+  const handlePayPalError = (_error: any) => {
     setMessage("Error en el pago con PayPal. Intenta nuevamente.")
     setMessageType("error")
     setCurrentStep("form")
@@ -154,7 +145,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
 
   const handleProceedToPayment = () => {
     if (!validateForm()) return
-
     setMessage(null)
 
     if (paymentMethod === "traditional") {
@@ -165,7 +155,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }
 
   const handleBackToForm = () => {
-    console.log("⬅️ Volviendo al formulario")
     setCurrentStep("form")
     setMessage(null)
     setLoading(false)
@@ -185,20 +174,22 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="checkoutTitle" className="checkout-overlay">
+    <div
+      aria-modal="true"
+      aria-labelledby="checkoutTitle"
+      className="checkout-overlay"
+    >
       <div className="checkout-modal">
-        {/* Header */}
         <div className="checkout-header">
           <h2 id="checkoutTitle" className="checkout-title">
             <CreditCard size={24} />
-            Proceso de Pago
+            Proceso de Pago 
           </h2>
           <button onClick={onClose} className="checkout-close-btn">
             <X size={20} />
           </button>
         </div>
 
-        {/* Content */}
         <div className="checkout-content">
           {cartItems.length === 0 ? (
             <div className="checkout-empty">
@@ -207,7 +198,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
             </div>
           ) : (
             <>
-              {/* Resumen del carrito */}
               <div className="checkout-summary">
                 <h3 className="checkout-section-title">
                   <Package size={20} />
@@ -236,7 +226,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
 
               {currentStep === "form" ? (
                 <>
-                  {/* Dirección de entrega */}
                   <div className="checkout-address">
                     <label htmlFor="deliveryAddress" className="checkout-label">
                       <MapPin size={20} />
@@ -258,20 +247,23 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                       </div>
                     )}
                   </div>
-                  {/* Métodos de pago */}
+
                   <div className="checkout-payment-methods">
                     <h3 className="checkout-section-title">
                       <CreditCard size={20} />
                       Método de pago
                     </h3>
                     <div className="checkout-payment-options">
-                      {/* PayPal Option */}
-                      <label className={`checkout-payment-option ${paymentMethod === "paypal" ? "active paypal" : ""}`}>
+                      <label
+                        className={`checkout-payment-option ${paymentMethod === "paypal" ? "active paypal" : ""}`}
+                      >
                         <input
                           type="radio"
                           value="paypal"
                           checked={paymentMethod === "paypal"}
-                          onChange={(e) => setPaymentMethod(e.target.value as "traditional" | "paypal")}
+                          onChange={(e) =>
+                            setPaymentMethod(e.target.value as "traditional" | "paypal")
+                          }
                           className="checkout-payment-radio"
                         />
                         <div className="checkout-payment-info">
@@ -279,12 +271,13 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                             <CreditCard size={18} />
                             PayPal
                           </div>
-                          <p className="checkout-payment-description">Pago seguro y rápido (Recomendado)</p>
+                          <p className="checkout-payment-description">
+                            Pago seguro y rápido (Recomendado)
+                          </p>
                         </div>
                         <Check className="checkout-payment-check" size={20} />
                       </label>
 
-                      {/* Traditional Payment Option */}
                       <label
                         className={`checkout-payment-option ${paymentMethod === "traditional" ? "active traditional" : ""
                           }`}
@@ -293,7 +286,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                           type="radio"
                           value="traditional"
                           checked={paymentMethod === "traditional"}
-                          onChange={(e) => setPaymentMethod(e.target.value as "traditional" | "paypal")}
+                          onChange={(e) =>
+                            setPaymentMethod(e.target.value as "traditional" | "paypal")
+                          }
                           className="checkout-payment-radio"
                         />
                         <div className="checkout-payment-info">
@@ -301,18 +296,21 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                             <Building2 size={18} />
                             Pago Tradicional
                           </div>
-                          <p className="checkout-payment-description">Transferencia bancaria o efectivo</p>
+                          <p className="checkout-payment-description">
+                            Transferencia bancaria o efectivo
+                          </p>
                         </div>
                         <Check className="checkout-payment-check" size={20} />
                       </label>
                     </div>
                   </div>
 
-                  {/* Botón proceder */}
                   <button
                     onClick={handleProceedToPayment}
                     disabled={loading}
-                    className={`checkout-btn ${paymentMethod === "paypal" ? "checkout-btn-paypal" : "checkout-btn-traditional"
+                    className={`checkout-btn ${paymentMethod === "paypal"
+                      ? "checkout-btn-paypal"
+                      : "checkout-btn-traditional"
                       }`}
                   >
                     {loading ? (
@@ -328,9 +326,9 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, clientId }) => {
                     ) : (
                       <>
                         Confirmar Pago Tradicional
+                        <Building2 size={20} />
                       </>
                     )}
-                        <Building2 size={20} />
                   </button>
                 </>
               ) : (

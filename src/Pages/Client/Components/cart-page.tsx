@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { ArrowLeft, ShoppingCart, Minus, Plus, X, Lock, Truck, Tag } from "lucide-react"
 import { useCart } from "../../../context/cart-context"
-import "./cart-page.css"
 
 const CartPage = () => {
   const { cartItems, removeFromCart, updateQuantity, clearCart, getCartTotal } = useCart()
@@ -17,7 +17,6 @@ const CartPage = () => {
     updateQuantity(productId, newQuantity)
   }
 
-  // Aplicar cupón de descuento (simulado)
   const handleApplyCoupon = () => {
     if (couponCode.toLowerCase() === "descuento10") {
       setDiscount(10)
@@ -30,12 +29,10 @@ const CartPage = () => {
     }
   }
 
-  // Calcular total con descuento
   const subtotal = getCartTotal()
   const discountAmount = (subtotal * discount) / 100
   const total = subtotal - discountAmount
 
-  // Proceder al checkout
   const handleCheckout = () => {
     navigate("/checkout", {
       state: {
@@ -50,13 +47,16 @@ const CartPage = () => {
       <div className="cart-header">
         <h1>Mi Carrito de Compras</h1>
         <Link to="/products" className="cart-continue-shopping">
-          ← Continuar comprando
+          <ArrowLeft size={20} />
+          Continuar comprando
         </Link>
       </div>
 
       {cartItems.length === 0 ? (
         <div className="cart-empty">
-          <div className="cart-empty-icon">🛒</div>
+          <div className="cart-empty-icon">
+            <ShoppingCart size={64} />
+          </div>
           <h2>Tu carrito está vacío</h2>
           <p>Parece que aún no has añadido productos a tu carrito.</p>
           <Link to="/products" className="cart-empty-button">
@@ -74,7 +74,7 @@ const CartPage = () => {
               <span className="cart-header-actions"></span>
             </div>
 
-            {cartItems.map((item:any) => (
+            {cartItems.map((item: any) => (
               <div className="cart-item" key={item.productId}>
                 <div className="cart-item-product">
                   <div className="cart-item-image">
@@ -97,14 +97,14 @@ const CartPage = () => {
                     onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
                     disabled={item.quantity <= 1}
                   >
-                    -
+                    <Minus size={16} />
                   </button>
                   <span className="cart-quantity-value">{item.quantity}</span>
                   <button
-                    className="cart-quantity-btn"
                     onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                    className="cart-quantity-btn"
                   >
-                    +
+                    <Plus size={16} />
                   </button>
                 </div>
 
@@ -116,7 +116,7 @@ const CartPage = () => {
                     onClick={() => removeFromCart(item.productId)}
                     aria-label="Eliminar producto"
                   >
-                    ×
+                    <X size={20} />
                   </button>
                 </div>
               </div>
@@ -141,8 +141,9 @@ const CartPage = () => {
                 disabled={couponApplied}
               />
               <button onClick={handleApplyCoupon} disabled={couponApplied || !couponCode}>
-              </button>
+                <Tag size={16} />
                 {couponApplied ? "Aplicado" : "Aplicar"}
+              </button>
             </div>
 
             <div className="cart-totals">
@@ -168,10 +169,12 @@ const CartPage = () => {
 
             <div className="cart-info">
               <p>
-                <span className="cart-info-icon">🔒</span> Pago seguro garantizado
+                <Lock size={16} className="cart-info-icon" />
+                Pago seguro garantizado
               </p>
               <p>
-                <span className="cart-info-icon">🚚</span> Envío gratis en pedidos superiores a $50
+                <Truck size={16} className="cart-info-icon" />
+                Envío gratis en pedidos superiores a $50
               </p>
             </div>
           </div>

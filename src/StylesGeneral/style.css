@@ -1,3 +1,74 @@
+
+:root {
+  /* Colores principales - Paleta de comida */
+  --primary-orange: #ff6b35;
+  --primary-red: #e74c3c;
+  --primary-yellow: #f39c12;
+  --primary-brown: #8b4513;
+  
+  /* Colores secundarios */
+  --secondary-orange: #ff8c42;
+  --secondary-red: #c0392b;
+  --secondary-yellow: #f1c40f;
+  --secondary-brown: #a0522d;
+  
+  /* Colores de acento */
+  --accent-green: #27ae60;
+  --accent-cream: #fdf6e3;
+  --accent-gold: #d4af37;
+  
+  /* Colores neutros */
+  --white: #ffffff;
+  --light-gray: #f8f9fa;
+  --medium-gray: #6c757d;
+  --dark-gray: #343a40;
+  --black: #000000;
+  
+  /* Colores de estado */
+  --success: #28a745;
+  --error: #dc3545;
+  --warning: #ffc107;
+  --info: #17a2b8;
+  
+  /* Gradientes */
+  --gradient-warm: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-red) 100%);
+  --gradient-gold: linear-gradient(135deg, var(--accent-gold) 0%, var(--primary-yellow) 100%);
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
+  
+  /* Tipografía */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+}
+
 *{
     margin: 0;
     padding: 0;

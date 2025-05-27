@@ -1,8 +1,6 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
-import "./auth.css"
+import "./Registro.css"
 import {Link} from "react-router-dom"
 
 export default function Registro() {
@@ -24,10 +22,10 @@ export default function Registro() {
     const { name, value } = e.target
     setFormData({
       ...formData,
+
       [name]: value,
     })
   }
-
   const validateForm = () => {
     let valid = true
     const newErrors = {

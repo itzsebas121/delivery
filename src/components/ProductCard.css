@@ -1,0 +1,246 @@
+/* Estilos compactos para ProductCard */
+@import "../StylesGeneral/style.css";
+
+.product-card-compact {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  border: 1px solid var(--light-gray);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 320px; /* Altura mínima consistente */
+}
+
+.product-card-compact:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: var(--primary-orange);
+}
+
+/* Contenedor de imagen compacto */
+.product-image-container {
+  position: relative;
+  width: 100%;
+  height: 200px; /* Altura fija para consistencia */
+  overflow: hidden;
+  background: var(--light-gray);
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all var(--transition-normal);
+  opacity: 0;
+}
+
+.product-image.loaded {
+  opacity: 1;
+}
+
+.product-card-compact:hover .product-image {
+  transform: scale(1.05);
+}
+
+/* Skeleton loading */
+.product-skeleton {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--light-gray) 25%, #f0f0f0 50%, var(--light-gray) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Fallback de imagen */
+.product-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--medium-gray);
+  background: var(--light-gray);
+}
+
+/* Badge de categoría */
+.product-category-badge {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  background: rgba(255, 107, 53, 0.9);
+  color: var(--white);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* Botón de agregar rápido */
+.product-quick-add {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  width: 32px;
+  height: 32px;
+  background: var(--white);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.product-card-compact:hover .product-quick-add {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.product-quick-add:hover {
+  background: var(--primary-orange);
+  color: var(--white);
+  transform: scale(1.1);
+}
+
+/* Contenido compacto */
+.product-content {
+  padding: var(--spacing-md);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.product-name {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--dark-gray);
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-description {
+  font-size: var(--font-size-sm);
+  color: var(--medium-gray);
+  line-height: 1.4;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer compacto */
+.product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  margin-top: auto;
+}
+
+.product-price {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--primary-orange);
+}
+
+.product-add-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--primary-orange);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.product-add-btn:hover {
+  background: var(--secondary-orange);
+  transform: translateY(-1px);
+}
+
+/* Skeleton para contenido */
+.product-card-compact.skeleton .product-content {
+  pointer-events: none;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: var(--light-gray);
+  border-radius: var(--radius-xs);
+  background: linear-gradient(90deg, var(--light-gray) 25%, #f0f0f0 50%, var(--light-gray) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-title {
+  height: 16px;
+  width: 80%;
+}
+
+.skeleton-description {
+  height: 12px;
+  width: 100%;
+}
+
+.skeleton-description.short {
+  width: 60%;
+}
+
+.skeleton-price {
+  height: 14px;
+  width: 60px;
+}
+
+.skeleton-button {
+  height: 28px;
+  width: 80px;
+  border-radius: var(--radius-sm);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .product-image-container {
+    height: 160px;
+  }
+
+  .product-content {
+    padding: var(--spacing-sm);
+  }
+
+  .product-name {
+    font-size: var(--font-size-sm);
+  }
+
+  .product-description {
+    font-size: var(--font-size-xs);
+  }
+}

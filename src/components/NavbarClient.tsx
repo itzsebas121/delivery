@@ -1,8 +1,11 @@
+import './NavbarClient.css'
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { ShoppingCart, User, Settings, LogOut, Home, Package, History, Phone, UserCheck } from "lucide-react"
 import { useAuth } from "../context/Authcontext"
 import { useCart } from "../context/cart-context"
-import "./index.css"
 import CartDropdownContent from "../Pages/Client/Cart/CartDropdownContext"
 
 const NavbarClient = () => {
@@ -12,9 +15,9 @@ const NavbarClient = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [cartMenuOpen, setCartMenuOpen] = useState(false)
-  const profileRef = useRef(null)
-  const menuRef = useRef(null)
-  const cartRef = useRef(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLUListElement>(null)
+  const cartRef = useRef<HTMLDivElement>(null)
 
   // Estado local para forzar re-renderizado
   const [, setCartUpdateTrigger] = useState(0)
@@ -33,13 +36,13 @@ const NavbarClient = () => {
     setMenuOpen(!menuOpen)
   }
 
-  const toggleProfileMenu = (e: any) => {
+  const toggleProfileMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
     setProfileMenuOpen(!profileMenuOpen)
     if (cartMenuOpen) setCartMenuOpen(false)
   }
 
-  const toggleCartMenu = (e: any) => {
+  const toggleCartMenu = (e: React.MouseEvent) => {
     e.stopPropagation()
     setCartMenuOpen(!cartMenuOpen)
     if (profileMenuOpen) setProfileMenuOpen(false)
@@ -48,21 +51,17 @@ const NavbarClient = () => {
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileRef.current &&
-        !(profileRef.current as HTMLElement).contains(event.target as Node) &&
-        profileMenuOpen
-      ) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node) && profileMenuOpen) {
         setProfileMenuOpen(false)
       }
 
-      if (cartRef.current && !(cartRef.current as HTMLElement).contains(event.target as Node) && cartMenuOpen) {
+      if (cartRef.current && !cartRef.current.contains(event.target as Node) && cartMenuOpen) {
         setCartMenuOpen(false)
       }
 
       if (
         menuRef.current &&
-        !(menuRef.current as HTMLElement).contains(event.target as Node) &&
+        !menuRef.current.contains(event.target as Node) &&
         !(event.target as HTMLElement).closest(".nav__menu-toggle") &&
         menuOpen
       ) {
@@ -78,14 +77,10 @@ const NavbarClient = () => {
   // Obtener el número de items en el carrito
   const itemsCount = getItemsCount()
 
- 
-
-
-
   return (
     <nav className="nav">
       <div className="nav__logo">
-        <h1>My Website</h1>
+        <h1>Hot-Grill</h1>
       </div>
 
       <div className="nav__menu-toggle" onClick={toggleMenu}>
@@ -99,27 +94,32 @@ const NavbarClient = () => {
       <ul ref={menuRef} className={`nav__menu ${menuOpen ? "nav__menu--active" : ""}`}>
         <li className="nav__item">
           <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
+            <Home size={18} />
             Inicio
           </Link>
         </li>
         <li className="nav__item">
           <Link to="products" className="nav__link" onClick={() => setMenuOpen(false)}>
+            <Package size={18} />
             Productos
           </Link>
         </li>
         <li className="nav__item">
           <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
+            <History size={18} />
             Historial
           </Link>
         </li>
         <li className="nav__item">
           <Link to="contact" className="nav__link" onClick={() => setMenuOpen(false)}>
+            <Phone size={18} />
             Contactos
           </Link>
         </li>
         {isAuthenticated && tipoUsuario === "Distribuidor" && (
           <li className="nav__item">
             <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
+              <UserCheck size={18} />
               Distribuidor
             </Link>
           </li>
@@ -127,6 +127,7 @@ const NavbarClient = () => {
         {isAuthenticated && tipoUsuario === "Cliente" && (
           <li className="nav__item">
             <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
+              <User size={18} />
               Mi Cuenta
             </Link>
           </li>
@@ -134,12 +135,11 @@ const NavbarClient = () => {
       </ul>
 
       <div className="nav__actions">
-       
         {/* Carrito de compras */}
         <div className="nav__cart" ref={cartRef}>
           <button className="nav__cart-button" onClick={toggleCartMenu}>
             <div className="nav__cart-icon">
-              <span className="nav__cart-icon-svg">🛒</span>
+              <ShoppingCart size={24} className="nav__cart-icon-svg" />
               {itemsCount > 0 && <span className="nav__cart-count">{itemsCount}</span>}
             </div>
           </button>
@@ -173,19 +173,19 @@ const NavbarClient = () => {
               <ul className="nav__dropdown-menu">
                 <li className="nav__dropdown-item">
                   <Link to="/profile" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon">👤</span>
+                    <User size={16} className="nav__dropdown-icon" />
                     Mi Perfil
                   </Link>
                 </li>
                 <li className="nav__dropdown-item">
                   <Link to="/settings" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon">⚙️</span>
+                    <Settings size={16} className="nav__dropdown-icon" />
                     Configuración
                   </Link>
                 </li>
                 <li className="nav__dropdown-item nav__dropdown-item--danger">
                   <button onClick={handleLogout} className="nav__dropdown-button">
-                    <span className="nav__dropdown-icon">🚪</span>
+                    <LogOut size={16} className="nav__dropdown-icon" />
                     Cerrar sesión
                   </button>
                 </li>

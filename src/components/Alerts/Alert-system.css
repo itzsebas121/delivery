@@ -1,0 +1,330 @@
+/* Sistema de alertas personalizado */
+@import "../../StylesGeneral/style.css";
+
+.alert-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  pointer-events: none;
+}
+
+/* Item de alerta */
+.alert-item {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  min-width: 320px;
+  max-width: 400px;
+  pointer-events: auto;
+  animation: slideInRight 0.3s ease-out;
+  border-left: 4px solid;
+  position: relative;
+}
+
+/* Tipos de alertas */
+.alert-success {
+  border-left-color: var(--success);
+}
+
+.alert-error {
+  border-left-color: var(--error);
+}
+
+.alert-warning {
+  border-left-color: var(--warning);
+}
+
+.alert-info {
+  border-left-color: var(--info);
+}
+
+.alert-confirm {
+  border-left-color: var(--warning);
+}
+
+/* Alerta especial del carrito */
+.alert-cart-success {
+  background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+  color: var(--white);
+  border-left: none;
+  overflow: visible;
+}
+
+.alert-cart-success .alert-icon {
+  color: var(--white);
+}
+
+.alert-cart-success .alert-title,
+.alert-cart-success .alert-message {
+  color: var(--white);
+}
+
+.alert-cart-success .alert-close {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.alert-cart-success .alert-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Contenido de la alerta */
+.alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--white);
+}
+
+.alert-success .alert-icon {
+  background: var(--success);
+}
+
+.alert-error .alert-icon {
+  background: var(--error);
+}
+
+.alert-warning .alert-icon {
+  background: var(--warning);
+}
+
+.alert-info .alert-icon {
+  background: var(--info);
+}
+
+.alert-confirm .alert-icon {
+  background: var(--warning);
+}
+
+.cart-icon {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Texto de la alerta */
+.alert-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--dark-gray);
+  margin: 0 0 var(--spacing-xs) 0;
+  line-height: 1.3;
+}
+
+.alert-message {
+  font-size: var(--font-size-sm);
+  color: var(--medium-gray);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Botón de cerrar */
+.alert-close {
+  background: var(--light-gray);
+  border: none;
+  color: var(--medium-gray);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.alert-close:hover {
+  background: var(--medium-gray);
+  color: var(--white);
+  transform: scale(1.1);
+}
+
+/* Acciones de confirmación */
+.alert-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.alert-btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.alert-btn-cancel {
+  background: var(--light-gray);
+  color: var(--dark-gray);
+}
+
+.alert-btn-cancel:hover {
+  background: var(--medium-gray);
+  color: var(--white);
+}
+
+.alert-btn-confirm {
+  background: var(--error);
+  color: var(--white);
+}
+
+.alert-btn-confirm:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Animación especial del carrito */
+.cart-success-animation {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 40px;
+  height: 40px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cartSuccessBounce 0.6s ease-out;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.cart-success-checkmark {
+  color: var(--white);
+  font-size: 18px;
+  font-weight: bold;
+  animation: checkmarkPop 0.3s ease-out 0.3s both;
+}
+
+/* Animaciones */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes cartSuccessBounce {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(-90deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes checkmarkPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .alert-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+  }
+
+  .alert-item {
+    min-width: auto;
+    max-width: none;
+  }
+
+  .alert-content {
+    padding: var(--spacing-md);
+  }
+
+  .alert-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Animación de salida */
+.alert-item.alert-exit {
+  animation: slideOutRight 0.3s ease-in forwards;
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Estados de hover */
+.alert-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Efectos adicionales */
+.alert-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}

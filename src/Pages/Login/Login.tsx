@@ -1,12 +1,14 @@
+"use client"
+
 import type React from "react"
 import { useState, useEffect } from "react"
-import "./auth.css"
 import { Link, useNavigate } from "react-router-dom"
+import { Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 import { baseURLLogin } from "../../config"
-import { jwtDecode } from 'jwt-decode';
+import { jwtDecode } from "jwt-decode"
+import "./Login.css"
 
 export default function Login() {
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -15,8 +17,9 @@ export default function Login() {
     email: "",
     password: "",
   })
+  const [isLoading, setIsLoading] = useState(false)
 
-  const navigate = useNavigate()  
+  const navigate = useNavigate()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -24,6 +27,13 @@ export default function Login() {
       ...formData,
       [name]: value,
     })
+    // Limpiar errores al escribir
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      })
+    }
   }
 
   const validateForm = () => {
@@ -56,6 +66,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (validateForm()) {
+      setIsLoading(true)
       try {
         const response = await fetch(`${baseURLLogin}/login`, {
           method: "POST",
@@ -76,26 +87,28 @@ export default function Login() {
 
         localStorage.setItem("token", data.token)
 
-        const decodedToken = jwtDecode<{ role: string }>(data.token);
-        
+        const decodedToken = jwtDecode<{ role: string }>(data.token)
+
         if (decodedToken.role === "Client") {
-          navigate("/dashboard-cliente");
+          navigate("/dashboard-cliente")
         } else if (decodedToken.role === "Distributor") {
-          navigate("/dashboard-distribuidor");
+          navigate("/dashboard-distribuidor")
         } else {
-          alert("Rol no reconocido");
+          alert("Rol no reconocido")
         }
-       
       } catch (err) {
-        alert( (err as Error).message)
+        alert((err as Error).message)
+      } finally {
+        setIsLoading(false)
       }
     }
   }
+
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
-      navigate("/login");
-      return;
+      navigate("/login")
+      return
     }
     const decodedToken = jwtDecode<{ role: string }>(token || "")
     if (decodedToken.role === "Client") {
@@ -103,17 +116,28 @@ export default function Login() {
     } else if (decodedToken.role === "Distributor") {
       navigate("/dashboard-distribuidor")
     }
-
-
   }, [])
+
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-logo">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#6366F1" />
-            <path d="M2 17L12 22L22 17" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M2 12L12 17L22 12" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#ff6b35" />
+            <path
+              d="M2 17L12 22L22 17"
+              stroke="#ff6b35"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M2 12L12 17L22 12"
+              stroke="#ff6b35"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
         <h2 className="auth-title">¡Bienvenido de nuevo!</h2>
@@ -157,50 +181,27 @@ export default function Login() {
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
-                  stroke="#64748B"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <Mail size={18} />
               Email
             </label>
             <div className="input-wrapper">
               <span className="input-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
-                    stroke="#64748B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <Mail size={18} />
               </span>
               <input
                 type="email"
                 id="email"
-                name="email"
                 placeholder="tu@email.com"
+                name="email"
                 value={formData.email}
                 onChange={handleChange}
                 className={errors.email ? "input-error" : ""}
+                disabled={isLoading}
               />
             </div>
             {errors.email && (
               <span className="error-message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 9V13M12 17H12.01M12 21C6.48 21 2 16.52 2 12C2 7.48 6.48 3 12 3C17.52 3 22 7.48 22 12C22 16.52 17.52 21 12 21Z"
-                    stroke="#EF4444"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <AlertCircle size={16} />
                 {errors.email}
               </span>
             )}
@@ -208,28 +209,12 @@ export default function Login() {
 
           <div className="form-group">
             <label htmlFor="password">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
-                  stroke="#64748B"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <Lock size={18} />
               Contraseña
             </label>
             <div className="input-wrapper">
               <span className="input-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C19.5304 19 20.0391 18.7893 20.4142 18.4142C20.7893 18.0391 21 17.5304 21 17V7C21 6.46957 20.7893 5.96086 20.4142 5.58579C20.0391 5.21071 19.5304 5 19 5H5C4.46957 5 3.96086 5.21071 3.58579 5.58579C3.21071 5.96086 3 6.46957 3 7V17C3 17.5304 3.21071 18.0391 3.58579 18.4142C3.96086 18.7893 4.46957 19 5 19Z"
-                    stroke="#64748B"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <Lock size={18} />
               </span>
               <input
                 type="password"
@@ -239,25 +224,27 @@ export default function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 className={errors.password ? "input-error" : ""}
+                disabled={isLoading}
               />
             </div>
             {errors.password && (
               <span className="error-message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M12 9V13M12 17H12.01M12 21C6.48 21 2 16.52 2 12C2 7.48 6.48 3 12 3C17.52 3 22 7.48 22 12C22 16.52 17.52 21 12 21Z"
-                    stroke="#EF4444"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <AlertCircle size={16} />
                 {errors.password}
               </span>
             )}
           </div>
 
-          <button type="submit" className="auth-button">Iniciar sesión</button>
+          <button type="submit" className={`auth-button ${isLoading ? "loading" : ""}`} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 size={20} className="auth-button-spinner" />
+                Iniciando sesión...
+              </>
+            ) : (
+              "Iniciar sesión"
+            )}
+          </button>
         </form>
 
         <p className="auth-footer">
