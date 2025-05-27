@@ -8,6 +8,7 @@ import Registro from "./Pages/Login/Registro"
 import HomeClient from "./Pages/Client/HomeClient"
 import ContactClient from "./Pages/Client/ContactClient"
 import OrderHistory from "./Pages/Client/History/order-history"
+import CheckoutPage from "./Pages/Client/Payment/CheckoutPage"
 
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
@@ -29,6 +30,7 @@ function App() {
           <Route path="products" element={<Product clienteId={1} />} />
           <Route path="contact" element={<ContactClient />} />
           <Route path="history" element={<OrderHistory clientId={1}/>} />
+          <Route path="payment" element={<CheckoutPage />} />
         </Route>
 
 

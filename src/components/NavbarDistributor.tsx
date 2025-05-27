@@ -1,9 +1,7 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
-
+import "./NavbarClient.css"
 const NavbarDistributor = () => {
   const { isAuthenticated, logout, tipoUsuario } = useAuth()
   const navigate = useNavigate()
