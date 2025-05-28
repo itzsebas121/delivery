@@ -139,7 +139,15 @@ BEGIN
     VALUES (@ClientId, 1, GETDATE(), GETDATE());
 
     SELECT SCOPE_IDENTITY() AS CartId;
-END
+END;
+
+CREATE PROCEDURE GetAllCategories
+AS
+BEGIN
+    SELECT CategoryId, CategoryName
+    FROM CATEGORIES
+    ORDER BY CategoryName;
+END;
 
 
 CREATE OR ALTER PROCEDURE CreateOrderFromCart
@@ -595,6 +603,55 @@ BEGIN
     END CATCH
 END;
 GO
+CREATE PROCEDURE UpdateDeliveryPerson
+    @UserId INT,
+    @Name   VARCHAR(100),
+    @Email  VARCHAR(100),
+    @Region VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRANSACTION;
+    BEGIN TRY
+        -- 1) Actualizar datos en USERS
+        UPDATE USERS
+        SET 
+            Name = @Name,
+            Email = @Email
+        WHERE 
+            UserId = @UserId;
+
+        -- 2) Actualizar región en DELIVERY_PERSONS
+        UPDATE DELIVERY_PERSONS
+        SET Region = @Region
+        WHERE UserId = @UserId;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+
+        -- Forma correcta de lanzar el error capturado
+        THROW;
+    END CATCH
+END;
+
+CREATE PROCEDURE DisableDeliveryPerson
+    @UserId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        UPDATE DELIVERY_PERSONS
+        SET IsAvailable = 0
+        WHERE UserId = @UserId;
+    END TRY
+    BEGIN CATCH
+        THROW;
+    END CATCH
+END;
 
 EXEC RegisterUser
     @Name = 'Carlos Pérez',

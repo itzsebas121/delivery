@@ -3,8 +3,8 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { baseURLRest } from "../../config"
-import "./Styles/orders-distributor.css"
+import { baseURLRest } from "../../../config"
+import { Truck, X, AlertCircle, Loader2 } from "lucide-react"
 
 interface DeliveryPerson {
   DeliveryPersonId: number
@@ -87,20 +87,23 @@ export default function AssignDeliveryModal({ orderId, onClose, onAssigned }: As
     <div className="modal-overlay">
       <div className="modal-container">
         <div className="modal-header">
-          <h2>Asignar Repartidor</h2>
+          <h2>
+            <Truck size={22} /> Asignar Repartidor
+          </h2>
           <button className="modal-close" onClick={onClose}>
-            ×
+            <X size={24} />
           </button>
         </div>
 
         <div className="modal-body">
           {loading ? (
             <div className="modal-loading">
-              <div className="orders-loader"></div>
-              <p>Cargando repartidores...</p>
+              <Loader2 size={40} className="animate-spin" />
+              <p>Cargando repartidores disponibles...</p>
             </div>
           ) : error ? (
             <div className="modal-error">
+              <AlertCircle size={40} color="#dc3545" />
               <p>{error}</p>
               <button onClick={() => window.location.reload()} className="order-btn">
                 Reintentar
@@ -109,7 +112,7 @@ export default function AssignDeliveryModal({ orderId, onClose, onAssigned }: As
           ) : (
             <form onSubmit={handleAssign}>
               <div className="form-group">
-                <label htmlFor="deliveryPerson">Seleccione un repartidor:</label>
+                <label htmlFor="deliveryPerson">Seleccione un repartidor para la orden #{orderId}:</label>
                 {deliveryPersons.length > 0 ? (
                   <select
                     id="deliveryPerson"
@@ -125,7 +128,10 @@ export default function AssignDeliveryModal({ orderId, onClose, onAssigned }: As
                     ))}
                   </select>
                 ) : (
-                  <p className="no-delivery-persons">No hay repartidores disponibles</p>
+                  <div className="no-delivery-persons">
+                    <AlertCircle size={20} />
+                    <p>No hay repartidores disponibles en este momento</p>
+                  </div>
                 )}
               </div>
 
@@ -138,7 +144,14 @@ export default function AssignDeliveryModal({ orderId, onClose, onAssigned }: As
                   className="order-btn order-btn-assign"
                   disabled={!selectedDeliveryId || submitting}
                 >
-                  {submitting ? "Asignando..." : "Asignar Repartidor"}
+                  {submitting ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Asignando...
+                    </>
+                  ) : (
+                    "Asignar Repartidor"
+                  )}
                 </button>
               </div>
             </form>

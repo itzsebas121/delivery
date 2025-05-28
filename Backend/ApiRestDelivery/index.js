@@ -14,7 +14,6 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
 // Función para conectar a la base de datos
 const connectToDatabase = async () => {
   try {
@@ -28,7 +27,6 @@ const connectToDatabase = async () => {
     return null;
   }
 };
-
 // Conexión a la base de datos y arranque del servidor solo tras conexión exitosa
 let pool;
 connectToDatabase().then((p) => {
@@ -136,7 +134,6 @@ app.post("/create-order-from-cart", async (req, res) => {
   }
 });
 
-
 app.post("/cart-add", async (req, res) => {
   try {
     const { ClientId, ProductId, Quantity } = req.body;
@@ -169,7 +166,18 @@ app.get("/get-cart/:clientId", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
+// Endpoint para obtener todas las categorías
+app.get("/categories", async (req, res) => {
+  try {
+    const poolConnection = await pool.connect();
+    const result = await poolConnection.request().execute("GetAllCategories");
+    
+    res.json(result.recordset);
+  } catch (err) {
+    console.error("Error al obtener categorías:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
 
 // Endpoint para crear una nueva categoría
 app.post("/categories", async (req, res) => {
@@ -227,6 +235,7 @@ app.delete("/categories/:id", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
 // Endpoint para eliminar un item del carrito
 app.delete("/cart-item/:cartId/:productId", async (req, res) => {
   try {
@@ -248,7 +257,6 @@ app.delete("/cart-item/:cartId/:productId", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
 // Endpoint para actualizar la cantidad de un item en el carrito
 app.put("/cart-item", async (req, res) => {
   try {
@@ -271,7 +279,6 @@ app.put("/cart-item", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
 // Endpoint para obtener todos los repartidores
 app.get("/delivery-persons", async (req, res) => {
   try {
@@ -283,6 +290,96 @@ app.get("/delivery-persons", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+app.post("/register-delivery", async (req, res) => {
+  try {
+    const { Name, Email, Password, Region } = req.body;
+
+    if (!Name || !Email || !Password || !Region) {
+      return res.status(400).json({ message: "Faltan datos obligatorios" });
+    }
+
+    const result = await pool.request()
+      .input("Name", sql.VarChar, Name)
+      .input("Email", sql.VarChar, Email)
+      .input("Password", sql.VarChar, Password)
+      .input("Region", sql.VarChar, Region)
+      .execute("RegisterDeliveryPerson");
+
+    const deliveryId = result.recordset[0]?.DeliveryId;
+    res.status(201).json({ message: "Repartidor registrado", deliveryId });
+  } catch (err) {
+    console.error(err);
+    if (err.message.includes("ya está registrado")) {
+      return res.status(409).json({ message: "Correo ya en uso" });
+    }
+    res.status(500).json({ message: "Error al registrar repartidor" });
+  }
+});
+app.put("/update-delivery/:userId", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { Name, Email, Region } = req.body;
+
+    if (!Name || !Email || !Region) {
+      return res.status(400).json({ message: "Faltan datos para actualizar" });
+    }
+
+    await pool.request()
+      .input("UserId", sql.Int, userId)
+      .input("Name", sql.VarChar, Name)
+      .input("Email", sql.VarChar, Email)
+      .input("Region", sql.VarChar, Region)
+      .execute("UpdateDeliveryPerson");
+
+    res.json({ message: "Repartidor actualizado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al actualizar repartidor" });
+  }
+});
+app.patch("/disable-delivery/:userId", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+
+    await pool.request()
+      .input("UserId", sql.Int, userId)
+      .execute("DisableDeliveryPerson");
+
+    res.json({ message: "Repartidor inhabilitado" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error al inhabilitar repartidor" });
+  }
+});
+app.post("/assign-delivery", async (req, res) => {
+  try {
+    const { OrderId, DeliveryId } = req.body;
+
+    if (!OrderId || !DeliveryId) {
+      return res.status(400).json({ message: "Faltan OrderId o DeliveryId" });
+    }
+
+    await pool.request()
+      .input("OrderId", sql.Int, OrderId)
+      .input("DeliveryId", sql.Int, DeliveryId)
+      .execute("AssignDelivery");
+
+    res.status(200).json({ message: "Repartidor asignado correctamente" });
+  } catch (err) {
+    console.error("Error al asignar repartidor:", err);
+
+    // Validación específica de errores
+    if (err.message.includes("Orden no encontrada")) {
+      return res.status(404).json({ message: "Orden no encontrada" });
+    }
+    if (err.message.includes("Repartidor no disponible")) {
+      return res.status(409).json({ message: "Repartidor no disponible o inexistente" });
+    }
+
+    res.status(500).json({ message: "Error al asignar repartidor" });
+  }
+});
+
 
 // Endpoint para obtener todos los clientes
 app.get("/clients", async (req, res) => {
@@ -295,7 +392,6 @@ app.get("/clients", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
 // Endpoint para obtener todas las ventas
 app.get("/sales", async (req, res) => {
   try {
@@ -307,7 +403,6 @@ app.get("/sales", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
 // Endpoint para obtener detalles de la orden por ID
 app.get("/orders-details/:id", async (req, res) => {
   const { id } = req.params;
@@ -353,7 +448,6 @@ app.get("/order-detail/:orderId", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
-
 // Cerrar conexiones cuando el proceso termine
 process.on("SIGINT", async () => {
   try {

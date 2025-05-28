@@ -1,8 +1,6 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { baseURLRest } from "../../config"
-import "./Styles/orders-distributor.css"
+import { baseURLRest } from "../../../config"
+import { Calendar, DollarSign, ShoppingBag, Truck, User, X } from "lucide-react"
 
 interface OrderDetail {
   OrderId: number
@@ -60,7 +58,9 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
         <div className="modal-container modal-details">
           <div className="modal-header">
             <h2>Detalles de la Orden #{orderId}</h2>
-            <button className="modal-close" onClick={onClose}>×</button>
+            <button className="modal-close" onClick={onClose}>
+              <X size={24} />
+            </button>
           </div>
           <div className="modal-body">
             <div className="modal-loading">
@@ -79,7 +79,9 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
         <div className="modal-container modal-details">
           <div className="modal-header">
             <h2>Detalles de la Orden #{orderId}</h2>
-            <button className="modal-close" onClick={onClose}>×</button>
+            <button className="modal-close" onClick={onClose}>
+              <X size={24} />
+            </button>
           </div>
           <div className="modal-body">
             <div className="modal-error">
@@ -100,7 +102,9 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
         <div className="modal-container modal-details">
           <div className="modal-header">
             <h2>Detalles de la Orden #{orderId}</h2>
-            <button className="modal-close" onClick={onClose}>×</button>
+            <button className="modal-close" onClick={onClose}>
+              <X size={24} />
+            </button>
           </div>
           <div className="modal-body">
             <div className="modal-error">
@@ -115,54 +119,60 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
   // Tomamos el primer elemento para obtener la información general de la orden
   const orderInfo = orderDetails[0]
 
+  // Formatear fecha
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+    return new Date(dateString).toLocaleDateString("es-ES", options)
+  }
+
   return (
     <div className="modal-overlay">
       <div className="modal-container modal-details">
         <div className="modal-header">
-          <h2>Detalles de la Orden #{orderInfo.OrderId}</h2>
+          <h2>Orden #{orderInfo.OrderId}</h2>
           <div className="modal-header-status">
             <span className={`order-status order-status-${orderInfo.Status.toLowerCase().replace(" ", "-")}`}>
               {orderInfo.Status}
             </span>
-            <button className="modal-close" onClick={onClose}>×</button>
+            <button className="modal-close" onClick={onClose}>
+              <X size={24} />
+            </button>
           </div>
         </div>
-        
-        <div className="modal-body order-details-modal-body">
+
+        <div className="order-details-modal-body">
           <div className="order-details-content">
             <div className="order-details-info">
               <div className="order-details-card">
-                <h3>Información de la Orden</h3>
+                <h3>
+                  <Calendar size={18} /> Información de la Orden
+                </h3>
                 <div className="order-info-grid">
                   <div className="info-item">
                     <span className="info-label">Fecha:</span>
-                    <span className="info-value">{new Date(orderInfo.OrderDate).toLocaleString()}</span>
+                    <span className="info-value">{formatDate(orderInfo.OrderDate)}</span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">Estado:</span>
                     <span className="info-value">{orderInfo.Status}</span>
                   </div>
                   <div className="info-item">
-                    <span className="info-label">Dirección de entrega:</span>
+                    <span className="info-label">Dirección:</span>
                     <span className="info-value">{orderInfo.DeliveryAddress}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Subtotal:</span>
-                    <span className="info-value">${orderInfo.Subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Descuento:</span>
-                    <span className="info-value">{orderInfo.DiscountPercentage}%</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">Total:</span>
-                    <span className="info-value">${orderInfo.TotalWithDiscount.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="order-details-card">
-                <h3>Información del Cliente</h3>
+                <h3>
+                  <User size={18} /> Información del Cliente
+                </h3>
                 <div className="order-info-grid">
                   <div className="info-item">
                     <span className="info-label">Nombre:</span>
@@ -177,7 +187,9 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
 
               {orderInfo.DeliveryPersonName && (
                 <div className="order-details-card">
-                  <h3>Información del Repartidor</h3>
+                  <h3>
+                    <Truck size={18} /> Información del Repartidor
+                  </h3>
                   <div className="order-info-grid">
                     <div className="info-item">
                       <span className="info-label">Nombre:</span>
@@ -190,10 +202,34 @@ export default function OrderDetailsModal({ orderId, onClose }: OrderDetailsModa
                   </div>
                 </div>
               )}
+
+              <div className="order-details-card">
+                <h3>
+                  <DollarSign size={18} /> Resumen de Pago
+                </h3>
+                <div className="order-info-grid">
+                  <div className="info-item">
+                    <span className="info-label">Subtotal:</span>
+                    <span className="info-value">${orderInfo.Subtotal.toFixed(2)}</span>
+                  </div>
+                  {orderInfo.DiscountPercentage > 0 && (
+                    <div className="info-item">
+                      <span className="info-label">Descuento:</span>
+                      <span className="info-value">{orderInfo.DiscountPercentage}%</span>
+                    </div>
+                  )}
+                  <div className="info-item">
+                    <span className="info-label">Total:</span>
+                    <span className="info-value">${orderInfo.TotalWithDiscount.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="order-details-products">
-              <h3>Productos</h3>
+              <h3>
+                <ShoppingBag size={18} /> Productos
+              </h3>
               <div className="order-products-list">
                 <div className="order-product-header">
                   <span className="product-col product-name">Producto</span>

@@ -12,10 +12,10 @@ import CheckoutPage from "./Pages/Client/Payment/CheckoutPage"
 
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
-import DeliveryDistributor from "./Pages/Distributor/DeliveryDistributor"
+import DeliveryDistributor from "./Pages/Distributor/DeliveryDistributor/DeliveryPersonDistributors"
 import HistoryDistributor from "./Pages/Distributor/HistoryDistributor"
-import OrdersDistributor from "./Pages/Distributor/OrdersDistributor"
-
+import OrdersDistributor from "./Pages/Distributor/Orders/OrdersDistributor"
+import ProductsDistributor from "./Pages/Distributor/ProductsDistributor/ProductsDistributor"
 function App() {
   return (
     <Router>
@@ -40,6 +40,7 @@ function App() {
           <Route path="sales" element={<OrdersDistributor />} />
           <Route path="clients" element={<ClientDistributor />} />
           <Route path="delivery" element={<DeliveryDistributor />} />
+          <Route path="products" element={<ProductsDistributor />} />
           <Route path="history" element={<HistoryDistributor />} />
         </Route>
         <Route path="*" element={<NotFound />} />

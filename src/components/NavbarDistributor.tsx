@@ -77,19 +77,24 @@ const NavbarDistributor = () => {
             Pedidos
           </Link>
         </li>
-        <li className="nav__item">
+       {/*  <li className="nav__item">
           <Link to="clients" className="nav__link" onClick={() => setMenuOpen(false)}>
             Clientes
           </Link>
-        </li>
+        </li> */}
         <li className="nav__item">
           <Link to="delivery" className="nav__link" onClick={() => setMenuOpen(false)}>
             Repartidores
           </Link>
         </li>
         <li className="nav__item">
+          <Link to="products" className="nav__link" onClick={() => setMenuOpen(false)}>
+            Productos
+          </Link>
+        </li>
+        <li className="nav__item">
           <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Repartidores
+            Historial
           </Link>
         </li>
         
