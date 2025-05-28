@@ -26,7 +26,7 @@ import "./order-history.css"
 interface Order {
   OrderId: number
   OrderDate: string
-  Status: "Pending" | "Completed" | "Cancelled" | "In Transit"
+  Status: "Pending" | "Completed" | "Cancelada" | "En camino"
   DeliveryAddress: string
   total: number
 }
@@ -88,17 +88,17 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
   // Separar por estado
   const ordersByStatus = {
     pending: filteredOrders.filter((order) => order.Status === "Pending"),
-    "in-transit": filteredOrders.filter((order) => order.Status === "In Transit"),
+    "in-transit": filteredOrders.filter((order) => order.Status === "En camino"),
     completed: filteredOrders.filter((order) => order.Status === "Completed"),
-    cancelled: filteredOrders.filter((order) => order.Status === "Cancelled"),
+    Cancelada: filteredOrders.filter((order) => order.Status === "Cancelada"),
   }
 
   // Estadísticas
   const stats = {
     pending: orders.filter((order) => order.Status === "Pending").length,
     completed: orders.filter((order) => order.Status === "Completed").length,
-    cancelled: orders.filter((order) => order.Status === "Cancelled").length,
-    inTransit: orders.filter((order) => order.Status === "In Transit").length,
+    Cancelada: orders.filter((order) => order.Status === "Cancelada").length,
+    inTransit: orders.filter((order) => order.Status === "En camino").length,
   }
 
   // Paginación
@@ -135,11 +135,11 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
     switch (status.toLowerCase()) {
       case "pending":
         return <Clock size={14} />
-      case "in transit":
+      case "En camino":
         return <Truck size={14} />
       case "completed":
         return <CheckCircle size={14} />
-      case "cancelled":
+      case "Cancelada":
         return <XCircle size={14} />
       default:
         return <Package size={14} />
@@ -151,11 +151,11 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
     switch (status.toLowerCase()) {
       case "pending":
         return "Pendiente"
-      case "in transit":
+      case "En camino":
         return "En tránsito"
       case "completed":
         return "Completado"
-      case "cancelled":
+      case "Cancelada":
         return "Cancelado"
       default:
         return status
@@ -189,10 +189,11 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
           {paginatedOrders.map((order) => (
             <div key={order.OrderId} className="order-card" onClick={() => openOrderDetails(order.OrderId)}>
               {/* Badge de estado flotante */}
-              <div className={`order-status-floating ${order.Status.toLowerCase().replace(" ", "-")}`}>
+              <div className={`order-status-floating ${order.Status.toLowerCase().replace(/\s+/g, '-')}`}>
                 {getStatusIcon(order.Status)}
                 {getStatusText(order.Status)}
               </div>
+
 
               <div className="order-card-content">
                 <div className="order-card-header">
@@ -349,9 +350,9 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
           >
             <option value="all">Todos los estados</option>
             <option value="pending">Pendientes</option>
-            <option value="in transit">En tránsito</option>
+            <option value="En camino">En tránsito</option>
             <option value="completed">Completados</option>
-            <option value="cancelled">Cancelados</option>
+            <option value="Cancelada">Cancelados</option>
           </select>
 
           <button onClick={clearFilters} className="order-clear-btn">
@@ -391,7 +392,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
           <div className="order-stat-icon cancelled">
             <XCircle size={20} />
           </div>
-          <div className="order-stat-number">{stats.cancelled}</div>
+          <div className="order-stat-number">{stats.Cancelada}</div>
           <div className="order-stat-label">Cancelados</div>
         </div>
       </div>
@@ -412,7 +413,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
           {renderOrderSection("Pedidos Pendientes", ordersByStatus.pending, <Clock size={20} />)}
           {renderOrderSection("En Tránsito", ordersByStatus["in-transit"], <Truck size={20} />)}
           {renderOrderSection("Completados", ordersByStatus.completed, <CheckCircle size={20} />)}
-          {renderOrderSection("Cancelados", ordersByStatus.cancelled, <XCircle size={20} />)}
+          {renderOrderSection("Cancelados", ordersByStatus.Cancelada, <XCircle size={20} />)}
         </>
       )}
 

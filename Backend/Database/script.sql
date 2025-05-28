@@ -418,6 +418,45 @@ BEGIN
   SET IsAvailable = 0
   WHERE DeliveryId = @DeliveryId;
 END;
+CREATE PROCEDURE CancelOrder
+  @OrderId INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  DECLARE @DeliveryId INT;
+
+  -- Validar que la orden exista y no esté finalizada
+  IF NOT EXISTS (SELECT 1 FROM ORDERS WHERE OrderId = @OrderId)
+    THROW 50001, 'Orden no encontrada.', 1;
+
+  IF EXISTS (
+    SELECT 1 FROM ORDERS 
+    WHERE OrderId = @OrderId AND Status IN ('Entregada', 'Cancelada')
+  )
+    THROW 50002, 'No se puede cancelar una orden completada o ya cancelada.', 1;
+
+  -- Obtener el DeliveryId si tenía asignado
+  SELECT @DeliveryId = DeliveryId FROM ORDERS WHERE OrderId = @OrderId;
+
+  -- Actualizar estado de la orden
+  UPDATE ORDERS
+  SET Status = 'Cancelada'
+  WHERE OrderId = @OrderId;
+
+  -- Registrar en historial
+  INSERT INTO ORDER_STATUS_HISTORY (OrderId, Status, Comment)
+  VALUES (@OrderId, 'Cancelada', 'Orden cancelada por el sistema o el usuario');
+
+  -- Si tenía repartidor, volverlo disponible
+  IF @DeliveryId IS NOT NULL
+  BEGIN
+    UPDATE DELIVERY_PERSONS
+    SET IsAvailable = 1
+    WHERE DeliveryId = @DeliveryId;
+  END
+END;
+
 CREATE OR ALTER PROCEDURE GetCartByClient
   @ClientId INT
 AS

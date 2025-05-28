@@ -248,7 +248,7 @@
   color: #b8860b;
 }
 
-.order-status-floating.in-transit {
+.order-status-floating.en-camino {
   background: rgba(23, 162, 184, 0.1);
   color: #17a2b8;
 }
@@ -258,7 +258,7 @@
   color: #28a745;
 }
 
-.order-status-floating.cancelled {
+.order-status-floating.cancelada {
   background: rgba(220, 53, 69, 0.1);
   color: #dc3545;
 }

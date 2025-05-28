@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE",  'PATCH',],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -377,6 +377,32 @@ app.post("/assign-delivery", async (req, res) => {
     }
 
     res.status(500).json({ message: "Error al asignar repartidor" });
+  }
+});
+app.patch("/cancel-order/:orderId", async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: "OrderId inválido" });
+    }
+
+    await pool.request()
+      .input("OrderId", sql.Int, orderId)
+      .execute("CancelOrder");
+
+    res.status(200).json({ message: "Orden cancelada exitosamente" });
+  } catch (err) {
+    console.error("Error al cancelar orden:", err);
+
+    if (err.message.includes("Orden no encontrada")) {
+      return res.status(404).json({ message: "La orden no existe" });
+    }
+    if (err.message.includes("No se puede cancelar")) {
+      return res.status(409).json({ message: "No se puede cancelar una orden completada o ya cancelada" });
+    }
+
+    res.status(500).json({ message: "Error al cancelar la orden" });
   }
 });
 
