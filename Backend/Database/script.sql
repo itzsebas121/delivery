@@ -17,7 +17,7 @@ CREATE TABLE CATEGORIES (
 );
 
 -- Productos
-CREATE TABLE PRODUCTS (
+CREATE TABLE PRODUCT (
     ProductId INT PRIMARY KEY IDENTITY,
     Name VARCHAR(100) NOT NULL,
     Description VARCHAR(200),
@@ -96,6 +96,114 @@ CREATE TABLE CartItems (
     FOREIGN KEY (CartId) REFERENCES Carts(CartId),   -- Relación con Carts
     FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)  -- Relación con PRODUCTS
 );
+ALTER TABLE ORDERS ADD IsRouteStarted BIT DEFAULT 0;
+ALTER TABLE ORDERS
+ADD 
+  DeliveryAddressName VARCHAR(100) NULL,
+  StartRouteLatitude DECIMAL(9,6) NULL,
+  StartRouteLongitude DECIMAL(9,6) NULL,
+  DeliveryLatitude DECIMAL(9,6) NULL,
+  DeliveryLongitude DECIMAL(9,6) NULL;
+
+CREATE OR ALTER PROCEDURE StartDeliveryRoute
+  @OrderId INT,
+  @DeliveryId INT,
+  @StartLatitude DECIMAL(9,6),
+  @StartLongitude DECIMAL(9,6)
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM ORDERS 
+    WHERE OrderId = @OrderId 
+      AND DeliveryId = @DeliveryId 
+      AND Status = 'En camino'
+  )
+  BEGIN
+    THROW 50001, 'Orden no asignada o no está en estado En camino.', 1;
+  END
+
+  UPDATE ORDERS
+  SET IsRouteStarted = 1,
+      StartRouteLatitude = @StartLatitude,
+      StartRouteLongitude = @StartLongitude
+  WHERE OrderId = @OrderId;
+
+  INSERT INTO ORDER_STATUS_HISTORY (OrderId, Status, Comment)
+  VALUES (@OrderId, 'En camino', 'Ruta iniciada por el repartidor');
+END;
+
+CREATE OR ALTER PROCEDURE GetPendingOrdersForDelivery
+  @DeliveryId INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT
+    O.OrderId,
+    O.OrderDate,
+    O.DeliveryAddressName,
+    O.DeliveryAddress,
+    CONCAT(O.DeliveryLatitude, ', ', O.DeliveryLongitude) AS DeliveryCoordinates,
+    CONCAT(O.StartRouteLatitude, ', ', O.StartRouteLongitude) AS StartCoordinates,
+    U.Name AS ClientName,
+    C.Phone AS ClientPhone,
+    O.Status,
+    O.Total,
+    O.IsRouteStarted
+  FROM ORDERS O
+  INNER JOIN CLIENTS C ON O.ClientId = C.ClientId
+  INNER JOIN USERS U ON C.UserId = U.UserId
+  WHERE O.DeliveryId = @DeliveryId
+    AND O.Status = 'En camino'
+  ORDER BY O.OrderDate ASC;
+END;
+
+CREATE OR ALTER PROCEDURE MarkOrderAsCompleted
+  @OrderId INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  -- Validar que exista la orden y que esté "En camino"
+  IF NOT EXISTS (
+    SELECT 1 FROM ORDERS WHERE OrderId = @OrderId AND Status = 'En camino'
+  )
+  BEGIN
+    THROW 50001, 'Orden no encontrada o no está en estado En camino.', 1;
+  END
+
+  BEGIN TRANSACTION;
+  BEGIN TRY
+    -- 1) Actualizar estado de la orden
+    UPDATE ORDERS
+    SET Status = 'Completada'
+    WHERE OrderId = @OrderId;
+
+    -- 2) Insertar en historial
+    INSERT INTO ORDER_STATUS_HISTORY (OrderId, Status, Comment)
+    VALUES (@OrderId, 'Completada', 'Orden entregada correctamente');
+
+    -- 3) Marcar repartidor como disponible nuevamente
+    DECLARE @DeliveryId INT;
+    SELECT @DeliveryId = DeliveryId FROM ORDERS WHERE OrderId = @OrderId;
+
+    IF @DeliveryId IS NOT NULL
+    BEGIN
+      UPDATE DELIVERY_PERSONS
+      SET IsAvailable = 1
+      WHERE DeliveryId = @DeliveryId;
+    END
+
+    COMMIT TRANSACTION;
+  END TRY
+  BEGIN CATCH
+    ROLLBACK TRANSACTION;
+    THROW;
+  END CATCH
+END;
+
 CREATE OR ALTER PROCEDURE CreateOrder
   @ClientId         INT,
   @DeliveryAddress  VARCHAR(255),

@@ -407,6 +407,88 @@ app.patch("/cancel-order/:orderId", async (req, res) => {
 });
 
 
+
+app.get("/delivery/:deliveryId/pending-orders", async (req, res) => {
+  try {
+    const deliveryId = parseInt(req.params.deliveryId);
+
+    const result = await pool
+      .request()
+      .input("DeliveryId", sql.Int, deliveryId)
+      .execute("GetPendingOrdersForDelivery");
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("Error al obtener órdenes pendientes:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+app.get("/delivery/:deliveryId/completed-cancelled-orders", async (req, res) => {
+  try {
+    const deliveryId = parseInt(req.params.deliveryId);
+
+    const result = await pool
+      .request()
+      .input("DeliveryId", sql.Int, deliveryId)
+      .execute("GetCompletedAndCancelledOrdersForDelivery");
+
+    res.json(result.recordset);
+  } catch (error) {
+    console.error("Error al obtener órdenes completadas/canceladas:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+app.post("/delivery/:deliveryId/start-route/:orderId", async (req, res) => {
+  try {
+    const deliveryId = parseInt(req.params.deliveryId);
+    const orderId = parseInt(req.params.orderId);
+    const { startLatitude, startLongitude } = req.body;
+
+    if (
+      typeof startLatitude !== "number" ||
+      typeof startLongitude !== "number"
+    ) {
+      return res.status(400).json({ message: "Coordenadas inválidas." });
+    }
+
+    const result = await pool
+      .request()
+      .input("OrderId", sql.Int, orderId)
+      .input("DeliveryId", sql.Int, deliveryId)
+      .input("StartLatitude", sql.Decimal(9, 6), startLatitude)
+      .input("StartLongitude", sql.Decimal(9, 6), startLongitude)
+      .execute("StartDeliveryRoute");
+
+    res.json({ message: "Ruta iniciada correctamente." });
+  } catch (error) {
+    console.error("Error al iniciar la ruta:", error);
+    res.status(500).json({ message: "Error interno del servidor." });
+  }
+});
+app.patch('/complete-order/:id', async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id);
+
+    if (isNaN(orderId)) {
+      return res.status(400).json({ message: "ID de orden inválido." });
+    }
+
+    const result = await pool
+      .request()
+      .input('OrderId', sql.Int, orderId)
+      .execute('MarkOrderAsCompleted');
+
+    res.status(200).json({ message: 'Orden marcada como completada.' });
+  } catch (err) {
+    console.error('Error al completar orden:', err);
+    res.status(500).json({ message: 'Error interno del servidor.' });
+  }
+});
+
+
+
 // Endpoint para obtener todos los clientes
 app.get("/clients", async (req, res) => {
   try {

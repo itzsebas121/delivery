@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import Login from "./Pages/Login/Login"
 import ClientDashboard from "./Pages/Client/ClientDashboard"
 import DistributorDashboard from "./Pages/Distributor/DistributorDashboard"
+import { DeliveryDashboard } from "./Pages/DeliveryPerson/DeliveryDashboard"
 import Product from "./Pages/Client/Components/Product"
 import NotFound from "./Pages/NotFound"
 import Registro from "./Pages/Login/Registro"
@@ -16,6 +17,10 @@ import DeliveryDistributor from "./Pages/Distributor/DeliveryDistributor/Deliver
 import HistoryDistributor from "./Pages/Distributor/HistoryDistributor"
 import OrdersDistributor from "./Pages/Distributor/Orders/OrdersDistributor"
 import ProductsDistributor from "./Pages/Distributor/ProductsDistributor/ProductsDistributor"
+
+import { HomeDeliveryPerson } from "./Pages/DeliveryPerson/HomeDeliveryPerson/HomeDeliveryPerson"
+import { OrdersDeliveryPerson } from "./Pages/DeliveryPerson/OrdersDeliveryPerson/OrdersDeliveryPerson"
+
 function App() {
   return (
     <Router>
@@ -42,6 +47,11 @@ function App() {
           <Route path="delivery" element={<DeliveryDistributor />} />
           <Route path="products" element={<ProductsDistributor />} />
           <Route path="history" element={<HistoryDistributor />} />
+        </Route>
+        <Route path="/dashboard-delivery" element={<DeliveryDashboard />}>
+          <Route index element={<HomeDeliveryPerson />} />
+          <Route path="home" element={<HomeDeliveryPerson />} />
+          <Route path="sales" element={<OrdersDeliveryPerson />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

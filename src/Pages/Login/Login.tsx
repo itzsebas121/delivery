@@ -27,7 +27,6 @@ export default function Login() {
       ...formData,
       [name]: value,
     })
-    // Limpiar errores al escribir
     if (errors[name as keyof typeof errors]) {
       setErrors({
         ...errors,
@@ -93,6 +92,9 @@ export default function Login() {
           navigate("/dashboard-cliente")
         } else if (decodedToken.role === "Distributor") {
           navigate("/dashboard-distribuidor")
+        }
+        else if (decodedToken.role === "Delivery") {
+          navigate("/dashboard-delivery")
         } else {
           alert("Rol no reconocido")
         }
@@ -115,6 +117,9 @@ export default function Login() {
       navigate("/dashboard-cliente")
     } else if (decodedToken.role === "Distributor") {
       navigate("/dashboard-distribuidor")
+    }
+    else if (decodedToken.role === "Delivery") {
+      navigate("/dashboard-delivery")
     }
   }, [])
 
