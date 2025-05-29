@@ -254,13 +254,6 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
 
         console.log("Drawing route with", coordinates.length, "points")
 
-        // Draw route line
-        const routeLine = L.polyline(coordinates, {
-          color: "#17a2b8",
-          weight: 5,
-          opacity: 0.8,
-          smoothFactor: 1,
-        }).addTo(map)
 
         // Calculate and set stats
         const duration = Math.round(route.duration / 60)
