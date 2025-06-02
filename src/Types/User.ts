@@ -10,5 +10,6 @@ export interface Client extends baseUser {
 export interface Admin extends baseUser {
 }
 export interface Delivery extends baseUser {
+    deliveryId: number;
 }
 export type User = Client | Admin | Delivery;

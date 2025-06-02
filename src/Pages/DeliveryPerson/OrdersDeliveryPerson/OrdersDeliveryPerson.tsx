@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { jwtDecode } from "jwt-decode"
+import { useAuth } from "../../../context/Authcontext"
 import {
   Package,
   MapPin,
@@ -38,17 +38,12 @@ interface Order {
   CompletionDate?: string
 }
 
-interface DecodedToken {
-  id: number
-  email: string
-  role: string
-}
-
 export function OrdersDeliveryPerson() {
-  const [deliveryId, setDeliveryId] = useState<number | null>(null)
+  const { user, loading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  const [loadingp, setLoading] = useState<boolean>(true)
   const [activeTab, setActiveTab] = useState<"En camino" | "Completada" | "Cancelada">("En camino")
+  const deliveryId = user?.rol === "Delivery" && "deliveryId" in user ? (user as any).deliveryId : 0;
 
   // Modal states
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false)
@@ -66,32 +61,11 @@ export function OrdersDeliveryPerson() {
 
   const { showSuccess, showError, showConfirm } = useAlert()
 
-  // Decode token and get delivery ID
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token") || ""
-      if (!token) {
-        showError("Error", "No se encontró token de autenticación")
-        return
-      }
 
-      const decodedToken = jwtDecode<DecodedToken>(token)
-      setDeliveryId(decodedToken.id)
-    } catch (error) {
-      showError("Error", "Token inválido")
-      console.error("Error decoding token:", error)
-    }
-  }, [showError])
-
-  // Fetch all orders
-  useEffect(() => {
-    if (deliveryId) {
-      fetchAllOrders()
-    }
-  }, [deliveryId])
-
+  }, [])
   const fetchAllOrders = async () => {
-    if (!deliveryId) return
+    if (!deliveryId || loading) return
 
     setLoading(true)
     try {
@@ -117,6 +91,21 @@ export function OrdersDeliveryPerson() {
       setLoading(false)
     }
   }
+  // Fetch all orders
+  useEffect(()  => {
+    if (deliveryId) {
+       fetchAllOrders()
+      
+    }
+  }, [deliveryId])
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="animate-spin" />
+      </div>
+    )
+  }
+
 
   const handleStartRoute = async (orderId: number, startLatitude: number, startLongitude: number) => {
     if (!deliveryId) return
@@ -153,10 +142,10 @@ export function OrdersDeliveryPerson() {
         setSelectedOrder((prev) =>
           prev
             ? {
-                ...prev,
-                IsRouteStarted: true,
-                StartCoordinates: `${startLatitude}, ${startLongitude}`,
-              }
+              ...prev,
+              IsRouteStarted: true,
+              StartCoordinates: `${startLatitude}, ${startLongitude}`,
+            }
             : null,
         )
       }
@@ -167,6 +156,7 @@ export function OrdersDeliveryPerson() {
   }
 
   const handleCompleteOrder = async (orderId: number) => {
+
     showConfirm("Completar orden", "¿Estás seguro de que deseas marcar esta orden como completada?", async () => {
       try {
         const response = await fetch(`${baseURLRest}/complete-order/${orderId}`, {
@@ -290,7 +280,7 @@ export function OrdersDeliveryPerson() {
 
   const orderCounts = getOrderCounts()
 
-  if (loading) {
+  if (loadingp) {
     return (
       <div className="delivery-orders-loading">
         <div className="loading-spinner">

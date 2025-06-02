@@ -4,7 +4,6 @@ import { Admin, Client, Delivery } from './User';
 export type User =   Admin| Client | Delivery;
 
 export function adaptarUsuario(data: any): User {
-  console.log(data);
   const base = {
     id: data.userId ?? data.id ?? '',
     nombre: data.name ?? 'Sin Nombre',
@@ -30,6 +29,7 @@ export function adaptarUsuario(data: any): User {
       return {
         ...base,
         rol: 'Delivery',
+        deliveryId: data.deliveryID ?? 0,
       } as Delivery;
 
   }
