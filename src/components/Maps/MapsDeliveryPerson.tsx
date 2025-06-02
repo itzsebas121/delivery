@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 interface Props {
-  startCoordinates: string;
-  deliveryCoordinates: string;
+  startCoordinates: string;      // Ej: "40.7128,-74.006"
+  deliveryCoordinates: string;   // Ej: "40.713,-74.001"
 }
 
 function parseCoordinates(coordStr: string): { lat: number; lng: number } | null {
@@ -18,182 +18,217 @@ function parseCoordinates(coordStr: string): { lat: number; lng: number } | null
 
 export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinates }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-
-  const originalRouteRef = useRef<L.Layer | null>(null); // azul
-  const liveRouteRef = useRef<L.Layer | null>(null); // rojo
-  const startMarkerRef = useRef<L.Marker | null>(null);
-  const deliveryMarkerRef = useRef<L.Marker | null>(null);
-  const liveMarkerRef = useRef<L.Marker | null>(null);
-
+  const mapInstanceRef = useRef<maplibregl.Map | null>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
+  const currentPosRef = useRef<{ lat: number; lng: number } | null>(null);
   const [routeStarted, setRouteStarted] = useState(false);
-
-  // Evitar re-renderizados con ref
-  const currentPositionRef = useRef<{ lat: number; lng: number } | null>(null);
 
   const start = parseCoordinates(startCoordinates);
   const delivery = parseCoordinates(deliveryCoordinates);
 
-  // Inicializar mapa y ruta azul (una vez)
   useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
-    if (!start) return;
+    const timeout = setTimeout(() => {
+      if (!mapRef.current || mapInstanceRef.current || !start) return;
 
-    const map = L.map(mapRef.current).setView([start.lat, start.lng], 13);
-    mapInstanceRef.current = map;
+      const map = new maplibregl.Map({
+        container: mapRef.current,
+        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        center: [start.lng, start.lat],
+        zoom: 14,
+        pitch: 0,
+        bearing: 0,
+        interactive: true,
+      });
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map);
+      mapInstanceRef.current = map;
 
-    // Ruta original azul
-    const fetchOriginalRoute = async () => {
-      if (!start || !delivery) return;
+      // Marcador inicio
+      new maplibregl.Marker({ color: "#3498db" })
+        .setLngLat([start.lng, start.lat])
+        .setPopup(new maplibregl.Popup().setText("Inicio"))
+        .addTo(map);
 
-      try {
-        const res = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
-        );
-        const data = await res.json();
-        const route = data.routes?.[0];
-        if (!route) return;
-
-        const coords = route.geometry.coordinates.map(([lng, lat]: number[]) => [lat, lng]);
-        if (originalRouteRef.current) {
-          map.removeLayer(originalRouteRef.current);
-        }
-        originalRouteRef.current = L.polyline(coords, { color: "#3498db", weight: 5 }).addTo(map);
-
-        if (!startMarkerRef.current) {
-          startMarkerRef.current = L.marker([start.lat, start.lng])
-            .addTo(map)
-            .bindPopup("Ubicación original");
-        }
-
-        if (!deliveryMarkerRef.current) {
-          deliveryMarkerRef.current = L.marker([delivery.lat, delivery.lng])
-            .addTo(map)
-            .bindPopup("Destino");
-        }
-
-        map.fitBounds((originalRouteRef.current as L.Polyline).getBounds(), { padding: [20, 20] });
-      } catch (error) {
-        // Silencioso
+      // Marcador destino
+      if (delivery) {
+        new maplibregl.Marker({ color: "#2ecc71" })
+          .setLngLat([delivery.lng, delivery.lat])
+          .setPopup(new maplibregl.Popup().setText("Destino"))
+          .addTo(map);
       }
-    };
 
-    fetchOriginalRoute();
+      // Dibujar ruta inicial antes de iniciar seguimiento
+      if (start && delivery) {
+        fetch(
+          `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            const route = data.routes?.[0];
+            if (!route) return;
+
+            const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
+              type: "Feature",
+              geometry: route.geometry,
+              properties: {},
+            };
+
+            if (map.getSource("initialRoute")) {
+              (map.getSource("initialRoute") as any).setData(geojson);
+            } else {
+              map.addSource("initialRoute", {
+                type: "geojson",
+                data: geojson,
+              });
+
+              map.addLayer({
+                id: "initialRoute",
+                type: "line",
+                source: "initialRoute",
+                layout: {
+                  "line-cap": "round",
+                  "line-join": "round",
+                },
+                paint: {
+                  "line-color": "#3498db",
+                  "line-width": 4,
+                },
+              });
+            }
+
+            // Ajustar vista para mostrar toda la ruta
+            const bounds = route.geometry.coordinates.reduce(
+              (bounds: maplibregl.LngLatBounds, coord: [number, number]) =>
+                bounds.extend(coord),
+              new maplibregl.LngLatBounds(route.geometry.coordinates[0], route.geometry.coordinates[0])
+            );
+            map.fitBounds(bounds, { padding: 60 });
+          })
+          .catch((e) => console.error("Error cargando ruta inicial:", e));
+      }
+
+      return () => {
+        map.remove();
+        mapInstanceRef.current = null;
+      };
+    }, 300);
+
+    return () => clearTimeout(timeout);
   }, [start, delivery]);
 
-  // Actualiza ruta roja y marcador vivo con flechita apuntando al destino
-  const updateLiveRoute = async (pos: { lat: number; lng: number }) => {
-    if (!mapInstanceRef.current || !delivery) return;
+function getBearing(start: { lat: number; lng: number }, end: { lat: number; lng: number }) {
+  const startLat = (start.lat * Math.PI) / 180;
+  const startLng = (start.lng * Math.PI) / 180;
+  const endLat = (end.lat * Math.PI) / 180;
+  const endLng = (end.lng * Math.PI) / 180;
 
-    const map = mapInstanceRef.current;
+  const y = Math.sin(endLng - startLng) * Math.cos(endLat);
+  const x = Math.cos(startLat) * Math.sin(endLat) -
+            Math.sin(startLat) * Math.cos(endLat) * Math.cos(endLng - startLng);
 
-    try {
-      // Calcular ángulo hacia el destino
-      const angle =
-        Math.atan2(delivery.lng - pos.lng, delivery.lat - pos.lat) * (180 / Math.PI);
+  let brng = Math.atan2(y, x);
+  brng = (brng * 180) / Math.PI;
+  return (brng + 360) % 360; // Normaliza a 0-360°
+}
 
-      const res = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${pos.lng},${pos.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
-      );
-      const data = await res.json();
-      const route = data.routes?.[0];
-      if (!route) return;
+const updateLiveRoute = async (pos: { lat: number; lng: number }) => {
+  const map = mapInstanceRef.current;
+  if (!map || !delivery) return;
 
-      const coords = route.geometry.coordinates.map(
-        ([lng, lat]: number[]) => [lat, lng] as [number, number]
-      );
+  const angleDeg = getBearing(pos, delivery);
 
-      // Eliminar anterior ruta roja si existe
-      if (liveRouteRef.current) {
-        map.removeLayer(liveRouteRef.current);
-      }
+  try {
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${pos.lng},${pos.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
+    );
+    const data = await res.json();
+    const route = data.routes?.[0];
+    if (!route) return;
 
-      // Crear nueva ruta roja y asegurarse que esté al frente
-      liveRouteRef.current = L.polyline(coords, {
-        color: "#e74c3c",
-        weight: 5,
-      }).addTo(map);
-      (liveRouteRef.current as L.Polyline).bringToFront(); 
+    const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
+      type: "Feature",
+      geometry: route.geometry,
+      properties: {},
+    };
 
-      // Actualizar o crear marcador vivo con rotación
-      if (liveMarkerRef.current) {
-        liveMarkerRef.current.setLatLng([pos.lat, pos.lng]);
-        (liveMarkerRef.current as any).setRotationAngle?.(angle);
-      } else {
-        const arrowIcon = L.icon({
-          iconUrl: "https://png.pngtree.com/png-clipart/20230328/original/pngtree-navigation-arrow-map-pointer-png-image_9007272.png",
-          iconSize: [30, 30],
-          iconAnchor: [15, 15],
-        });
+    if (map.getSource("liveRoute")) {
+      (map.getSource("liveRoute") as any).setData(geojson);
+    } else {
+      map.addSource("liveRoute", {
+        type: "geojson",
+        data: geojson,
+      });
 
-        liveMarkerRef.current = L.marker([pos.lat, pos.lng], {
-          icon: arrowIcon,
-        })
-          .addTo(map)
-          .bindPopup("Posición actual (en vivo)")
-          .openPopup();
-
-        (liveMarkerRef.current as any).setRotationAngle?.(angle);
-        (liveMarkerRef.current as any).setRotationOrigin?.("center center");
-      }
-
-      // Siempre mantener zoom máximo centrado en la posición
-      map.setView([pos.lat, pos.lng], map.getMaxZoom() || 19); // 🔥 Zoom tope
-    } catch (error) {
-      // Silencioso
+      map.addLayer({
+        id: "liveRoute",
+        type: "line",
+        source: "liveRoute",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#e74c3c",
+          "line-width": 6,
+        },
+      });
     }
-  };
+
+    map.jumpTo({
+      center: [pos.lng, pos.lat],
+      bearing: angleDeg,
+      zoom: 18,
+      pitch: 60,
+    });
+
+    if (markerRef.current) {
+      markerRef.current.setLngLat([pos.lng, pos.lat]);
+      // Actualizar rotación del icono
+    } else {
+      const el = document.createElement("div");
+      el.style.width = "30px";
+      el.style.height = "30px";
+      el.style.backgroundImage = "url('https://cdn-icons-png.flaticon.com/512/32/32441.png')";
+      el.style.backgroundSize = "contain";
+      el.style.transform = `rotate(${angleDeg}deg)`;
+
+      markerRef.current = new maplibregl.Marker({ element: el })
+        .setLngLat([pos.lng, pos.lat])
+        .setPopup(new maplibregl.Popup().setText("Posición actual"))
+        .addTo(map);
+    }
+  } catch (e) {
+    console.error("Error actualizando ruta:", e);
+  }
+};
 
 
-  // Iniciar actualización en vivo cada segundo (puedes cambiarlo)
   useEffect(() => {
     if (!routeStarted) return;
 
-    if (!navigator.geolocation) {
-      alert("Geolocalización no soportada en este navegador.");
-      return;
-    }
-
-    const getLocationAndUpdate = () => {
-      console.log("Actualizando ubicación...");
+    const getPositionAndUpdate = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-          currentPositionRef.current = pos;
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          currentPosRef.current = pos;
           updateLiveRoute(pos);
         },
-        (error) => {
-          console.error("Error obteniendo ubicación:", error);
-        },
+        (err) => console.error("Geolocalización fallida:", err),
         { enableHighAccuracy: true }
       );
     };
 
-    getLocationAndUpdate();
-    const interval = window.setInterval(getLocationAndUpdate, 1000);
+    getPositionAndUpdate();
+    const interval = setInterval(getPositionAndUpdate, 53000);
 
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [routeStarted, delivery]);
+    return () => clearInterval(interval);
+  }, [routeStarted]);
 
-  // Render
-  if (!start || !delivery)
-    return (
-      <div
-        ref={mapRef}
-        style={{
-          height: "400px",
-          width: "100%",
-          border: "2px solid #ccc",
-          borderRadius: "10px",
-        }}
-      />
-    );
+  if (!start || !delivery) {
+    return <div>⚠️ Coordenadas inválidas</div>;
+  }
 
   return (
     <>
@@ -204,28 +239,33 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
           width: "100%",
           border: "2px solid #ccc",
           borderRadius: "10px",
-          position: "relative",
-          zIndex: 0,
+          marginBottom: "10px",
         }}
       />
-
       <button
-        onClick={() => setRouteStarted(true)}
+        onClick={() => {
+          setRouteStarted(true);
+          const map = mapInstanceRef.current;
+          if (!map) return;
+
+          // Quitar ruta inicial para que no se sobreponga con la ruta en vivo
+          if (map.getLayer("initialRoute")) {
+            map.removeLayer("initialRoute");
+          }
+          if (map.getSource("initialRoute")) {
+            map.removeSource("initialRoute");
+          }
+
+        }}
         style={{
-          position: "absolute",
-          bottom: 20,
-          right: 20,
-          zIndex: 1000,
           padding: "10px 15px",
           backgroundColor: routeStarted ? "gray" : "#e74c3c",
           color: "#fff",
           border: "none",
           borderRadius: "5px",
           cursor: routeStarted ? "not-allowed" : "pointer",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
         }}
         disabled={routeStarted}
-        title={routeStarted ? "Ruta en vivo iniciada" : "Iniciar ruta en vivo"}
       >
         {routeStarted ? "Ruta iniciada" : "Iniciar ruta"}
       </button>

@@ -155,7 +155,7 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
                 </h3>
 
               </div>
-              <div className="map-container">
+              <div className="map-container" style= { {height: "100%", display: "flex", flexDirection: "column"} }>
                <MapsDeliveryPerson startCoordinates={order.StartCoordinates||","} deliveryCoordinates={order.DeliveryCoordinates||","} />
 
               </div>
