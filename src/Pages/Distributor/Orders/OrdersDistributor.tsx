@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 
-// Definir interfaces para los tipos de datos
 interface Order {
   OrderId: number
   OrderDate: string

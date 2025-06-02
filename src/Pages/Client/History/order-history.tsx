@@ -22,6 +22,7 @@ import {
 import { baseURLRest } from "../../../config"
 import OrderDetailsModal from "./order-detail-modal"
 import "./order-history.css"
+import { useAuth } from "../../../context/Authcontext"
 
 interface Order {
   OrderId: number
@@ -31,10 +32,12 @@ interface Order {
   total: number
 }
 
-const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
+const OrderHistory: React.FC<{ clientId?: number }> = () => {
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadingp, setLoadingp] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { user, loading } = useAuth()
+  const clientId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("")
@@ -42,19 +45,15 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(8)
+  const [itemsPerPage] = useState(3)
 
   // Modal
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
 
-  // Cargar pedidos
-  useEffect(() => {
-    fetchOrders()
-  }, [])
 
   const fetchOrders = async () => {
-    setLoading(true)
+    setLoadingp(true)
     setError(null)
     try {
       const response = await fetch(`${baseURLRest}/product-history/${clientId}`)
@@ -70,10 +69,24 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
-      setLoading(false)
+      setLoadingp(false)
     }
   }
+  // Cargar pedidos
+  useEffect(() => {
+    if (!loading) {
+      fetchOrders()
+    }
+  }, [clientId])
 
+  if (loading) {
+    console.log("Cargando datos del usuario...")
+    return (
+      <div className="loading-container">
+        <Loader2 className="loading-icon" />
+      </div>
+    )
+  }
   // Filtrar pedidos
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -286,7 +299,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = ({ clientId = 1 }) => {
     )
   }
 
-  if (loading) {
+  if (loadingp) {
     return (
       <div className="order-loading">
         <Loader2 className="order-spinner" size={32} />

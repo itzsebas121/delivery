@@ -19,7 +19,6 @@ app.use(
   })
 );
 
-// Conexión a la base de datos y arranque del servidor solo tras conexión exitosa
 let pool;
 sql.connect(config)
   .then((p) => {
@@ -35,7 +34,6 @@ sql.connect(config)
     process.exit(1);
   });
 
-// Middleware para verificar disponibilidad de la BD antes de manejar rutas
 app.use((req, res, next) => {
   if (!pool) {
     return res.status(503).json({ message: "Base de datos no disponible" });
@@ -61,16 +59,16 @@ app.post("/login", async (req, res) => {
     const user = result.recordset[0];
 
     if (!user || user.ErrorMessage) {
-      return res.status(401).send(user?.ErrorMessage || "Credenciales inválidas");
+      return res.status(401).json(user?.ErrorMessage || {Message: "Credenciales inválidas"});
     }
 
     const token = jwt.sign(
-      { id: user.UserId, name: user.Name, email: user.Email, role: user.RoleName },
+      { id: user.UserId, name: user.Name, email: user.Email, role: user.RoleName , clientID: user.ClientID},
       JWT_SECRET,
       { expiresIn: "24h" }
     );
 
-    res.json({ token });
+    res.json({ token:token });
   } catch (err) {
     console.error("Error en login:", err);
     res.status(500).send("Error interno en el servidor");

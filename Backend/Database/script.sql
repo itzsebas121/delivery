@@ -602,29 +602,6 @@ END
 GO;
 
 go 
-CREATE PROCEDURE RegisterUser
-    @Name VARCHAR(100),
-    @Email VARCHAR(100),
-    @Password VARCHAR(255),
-    @RoleName VARCHAR(50)
-AS
-BEGIN
-    SET NOCOUNT ON;
-    IF EXISTS (SELECT 1 FROM USERS WHERE Email = @Email)
-    BEGIN
-        RAISERROR('El correo ya está registrado.', 16, 1);
-        RETURN;
-    END
-
-    INSERT INTO USERS (Name, Email, PasswordHash, RoleName)
-    VALUES (
-        @Name,
-        @Email,
-        HASHBYTES('SHA2_256', CONVERT(VARBINARY(MAX), @Password)),
-        @RoleName
-    );
-END;
-go;
 
 CREATE or alter PROCEDURE RegisterClient
     @Name           VARCHAR(100),
@@ -676,13 +653,61 @@ BEGIN
     END CATCH
 END;
 GO
-CREATE PROCEDURE GetUserInfo
+CREATE OR ALTER PROCEDURE GetUserInfo
     @Email VARCHAR(100),
     @Password VARCHAR(255)
-AS
-BEGIN
+AS BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @UserId INT;
+    DECLARE @RoleName VARCHAR(50);
+
+    -- Validar credenciales
+    SELECT 
+        @UserId = UserId,
+        @RoleName = RoleName
+    FROM USERS
+    WHERE Email = @Email 
+    AND PasswordHash = HASHBYTES('SHA2_256', CONVERT(VARBINARY(MAX), @Password));
+
+    -- Si no se encontró el usuario
+    IF @UserId IS NULL
+    BEGIN
+        SELECT 'Credenciales inválidas' AS ErrorMessage;
+        RETURN;
+    END
+    IF @RoleName = 'Cliente'
+    BEGIN
+        SELECT 
+            U.UserId,
+            U.Name,
+            U.Email,
+            U.RoleName,
+            C.ClienteID,
+            'Login correcto' AS Message
+        FROM USERS U
+        INNER JOIN CLIENTES C ON C.UserId = U.UserId
+        WHERE U.UserId = @UserId;
+        RETURN;
+    END
+
+    -- Si el usuario es Delivery, traer DeliveryID
+    IF @RoleName = 'Delivery'
+    BEGIN
+        SELECT 
+            U.UserId,
+            U.Name,
+            U.Email,
+            U.RoleName,
+            D.DeliveryID,
+            'Login correcto' AS Message
+        FROM USERS U
+        INNER JOIN DELIVERY_PERSONS D ON D.UserId = U.UserId
+        WHERE U.UserId = @UserId;
+        RETURN;
+    END
+
+    -- Si es otro rol, solo mostrar datos básicos
     SELECT 
         UserId,
         Name,
@@ -690,14 +715,9 @@ BEGIN
         RoleName,
         'Login correcto' AS Message
     FROM USERS
-    WHERE Email = @Email 
-    AND PasswordHash = HASHBYTES('SHA2_256', CONVERT(VARBINARY(MAX), @Password));
-    
-    IF @@ROWCOUNT = 0
-    BEGIN
-        SELECT 'Credenciales inválidas' AS ErrorMessage;
-    END
+    WHERE UserId = @UserId;
 END;
+
 
 
 
@@ -799,18 +819,6 @@ BEGIN
         THROW;
     END CATCH
 END;
-
-EXEC RegisterUser
-    @Name = 'Carlos Pérez',
-    @Email = 'carlosperez@gmail.com',
-    @Password = 'cliente123',
-    @RoleName = 'Client';
-
-EXEC RegisterUser
-    @Name = 'Lucía Torres',
-    @Email = 'luciatorres@gmail.com',
-    @Password = 'distribuidor456',
-    @RoleName = 'Distributor';
 
 
 

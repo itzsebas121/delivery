@@ -1,4 +1,4 @@
-import type React from "react"
+import { useAuth } from "../../../context/Authcontext"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, ShoppingCart, MapPin, CreditCard } from "lucide-react"
@@ -14,20 +14,22 @@ type CartItem = {
   CartId: number
 }
 
-const CheckoutPage: React.FC = () => {
+const CheckoutPage = () => {
+  const { user, loading } = useAuth()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [cartId, setCartId] = useState<number | null>(null)
   const [deliveryAddress, setDeliveryAddress] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [loadingp, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [messageType, setMessageType] = useState<"success" | "error" | "warning">("success")
   const navigate = useNavigate()
-  const clientId = 1
+  const clientID = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
 
   useEffect(() => {
     async function fetchCart() {
       try {
-        const res = await fetch(`${baseURLRest}/get-cart/${clientId}`)
+        alert(clientID)
+        const res = await fetch(`${baseURLRest}/get-cart/${clientID}`)
         if (!res.ok) throw new Error("No se pudo obtener el carrito")
         const data: CartItem[] = await res.json()
         setCartItems(data)
@@ -39,8 +41,9 @@ const CheckoutPage: React.FC = () => {
         setMessageType("error")
       }
     }
+    if (loading) return;
     fetchCart()
-  }, [clientId])
+  }, [clientID])
 
   const getTotal = () => cartItems.reduce((acc, item) => acc + (item.Price ?? 0) * (item.Quantity ?? 0), 0)
 
@@ -189,7 +192,7 @@ const CheckoutPage: React.FC = () => {
                 }}
                 placeholder="Calle 123, Colonia, Ciudad"
                 className="checkout-input-compact"
-                disabled={loading}
+                disabled={loadingp}
               />
               {message && <div className={`checkout-message ${messageType}`}>{message}</div>}
 
@@ -216,7 +219,7 @@ const CheckoutPage: React.FC = () => {
                     </div>
                     <button
                       onClick={handleTraditionalPay}
-                      disabled={loading}
+                      disabled={loadingp}
                       className="checkout-traditional-button"
                     >
                       Pago Tradicional
@@ -237,5 +240,4 @@ const CheckoutPage: React.FC = () => {
     </div>
   )
 }
-
 export default CheckoutPage

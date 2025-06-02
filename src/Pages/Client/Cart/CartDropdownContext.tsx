@@ -1,8 +1,8 @@
 import { baseURLRest } from "../../../config"
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../../../context/Authcontext"
 import "./CartDropdownContext.css"
-
 type CartItem = {
   ProductId: number
   CartId: number
@@ -13,9 +13,11 @@ type CartItem = {
 }
 
 const CartDropdownContent = () => {
+  const { user, loading } = useAuth()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const navigate = useNavigate()
-  const clientId = 1
+  // Use the clientId from user if available and user is a Client, otherwise fallback to 1
+  const clientId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
 
   useEffect(() => {
     const fetchCartItems = async () => {
@@ -34,10 +36,13 @@ const CartDropdownContent = () => {
         setCartItems([])
       }
     }
-
-    fetchCartItems()
+    if (!loading) {
+      fetchCartItems()
+    }
   }, [clientId])
-
+  if (loading) {
+    return <div className="nav__cart-loading">Cargando...</div>
+  }
   const debounceTimers = useRef<{ [key: number]: number }>({})
 
   const removeFromCart = async (productId: number, _cartId: number) => {
@@ -182,7 +187,7 @@ const CartDropdownContent = () => {
           <span>${getCartTotal().toFixed(2)}</span>
         </div>
         <div className="nav__cart-actions">
-          
+
           <button className="nav__cart-button-primary" onClick={handleCheckout}>
             Pagar
           </button>

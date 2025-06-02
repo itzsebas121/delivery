@@ -4,11 +4,14 @@ import { Search, Filter, ChevronLeft, ChevronRight, Grid, List, Package } from "
 import { baseURLRest } from "../../../config"
 import ProductCard from "../../../components/ProductCard"
 import "./Product.css"
+import { useAuth } from "../../../context/Authcontext"
 
-const Product = (props: any) => {
-  const clienteId = props.clienteId
+const Product = () => {
+  const { user, loading } = useAuth()
+  const clienteId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 0;
+
   const [products, setProducts] = useState<any[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loadingp, setLoadingp] = useState<boolean>(false)
   const [page, setPage] = useState<number>(1)
   const [limit] = useState<number>(12)
   const [nameFilter, setNameFilter] = useState<string>("")
@@ -18,7 +21,7 @@ const Product = (props: any) => {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      setLoading(true)
+      setLoadingp(true)
       try {
         // Simular delay mínimo para mostrar skeleton
         const [response] = await Promise.all([
@@ -32,18 +35,18 @@ const Product = (props: any) => {
           ),
           new Promise((resolve) => setTimeout(resolve, 300)),
         ])
-
+  
         const data = await response.json()
         setProducts(data)
       } catch (error) {
         console.error("Error al obtener productos:", error)
       } finally {
-        setLoading(false)
+        setLoadingp(false)
       }
     }
-
+    if (loading) return 
     fetchProducts()
-  }, [page, limit, nameFilter, categoryFilter])
+  }, [page, limit, nameFilter, categoryFilter, clienteId])
 
   useEffect(() => {
     if (addedProductId) {
@@ -53,6 +56,9 @@ const Product = (props: any) => {
       return () => clearTimeout(timer)
     }
   }, [addedProductId])
+  if(loading){
+    return <div className="loading-spinner">Cargando...</div>
+  }
 
   const handleAddToCart = async (product: any) => {
     try {
@@ -146,7 +152,7 @@ const Product = (props: any) => {
 
       {/* Grid de productos */}
       <div className={`product-grid-compact ${viewMode}`}>
-        {loading ? (
+        {loadingp ? (
           Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={index} />)
         ) : products.length > 0 ? (
           products.map((product: any) => (

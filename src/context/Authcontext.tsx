@@ -1,45 +1,67 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import { User } from '../Types/User';
+import { adaptarUsuario } from '../Types/UserAdapter';
 
 interface AuthContextType {
+  user: User | null;
   token: string | null;
   tipoUsuario: string | null;
   login: (token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [tipoUsuario, setTipoUsuario] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-      const payload = JSON.parse(atob(storedToken.split('.')[1]));
-      setTipoUsuario(payload.tipoUsuario);
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      try {
+        const decoded: any = jwtDecode(savedToken);
+        const adaptedUser = adaptarUsuario(decoded);
+        setUser(adaptedUser);
+        setTipoUsuario(decoded.tipoUsuario || null);
+        setToken(savedToken);
+      } catch (err) {
+        console.error('Token inválido o expirado');
+        logout();
+      }
     }
+    setLoading(false);
   }, []);
 
   const login = (newToken: string) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    const payload = JSON.parse(atob(newToken.split('.')[1]));
-    setTipoUsuario(payload.tipoUsuario);
+    try {
+      const decoded = jwtDecode(newToken);
+      const adaptedUser = adaptarUsuario(decoded);
+      localStorage.setItem('token', newToken);
+      setUser(adaptedUser);
+      setTipoUsuario(adaptedUser.rol || null);
+      setToken(newToken);
+    } catch {
+      console.error('Token inválido al hacer login');
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
+    localStorage.removeItem('token');
+    setUser(null);
     setTipoUsuario(null);
+    setToken(null);
   };
 
   const isAuthenticated = !!token;
 
   return (
-    <AuthContext.Provider value={{ token, tipoUsuario, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, tipoUsuario, login, logout, isAuthenticated, loading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -47,8 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth debe usarse dentro de AuthProvider");
-  }
+  if (!context) throw new Error('useAuth debe usarse dentro de AuthProvider');
   return context;
 };

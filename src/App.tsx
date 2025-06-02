@@ -32,9 +32,9 @@ function App() {
         <Route path="/dashboard-cliente" element={<ClientDashboard />}>
           <Route index element={<HomeClient />} />
           <Route path="home" element={<HomeClient />} />
-          <Route path="products" element={<Product clienteId={1} />} />
+          <Route path="products" element={<Product/>} />
           <Route path="contact" element={<ContactClient />} />
-          <Route path="history" element={<OrderHistory clientId={1}/>} />
+          <Route path="history" element={<OrderHistory />} />
           <Route path="payment" element={<CheckoutPage />} />
         </Route>
 
