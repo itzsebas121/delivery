@@ -71,7 +71,6 @@ export function OrdersDeliveryPerson() {
     try {
       // Fetch only assigned orders (En camino)
       const pendingResponse = await fetch(`${baseURLRest}/delivery/${deliveryId}/pending-orders`)
-      console.log("pendingResponse", pendingResponse)
       const pendingData = pendingResponse.ok ? await pendingResponse.json() : []
 
       // Fetch completed/cancelled orders

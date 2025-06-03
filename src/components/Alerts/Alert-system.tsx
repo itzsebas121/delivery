@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X, ShoppingCart } from "lucide-react"
 import "./Alert-system.css"
 // Tipos de alertas
+
 type AlertType = "success" | "error" | "warning" | "info" | "confirm"
 
 interface AlertData {
