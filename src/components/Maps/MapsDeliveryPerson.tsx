@@ -221,7 +221,7 @@ const updateLiveRoute = async (pos: { lat: number; lng: number }) => {
     };
 
     getPositionAndUpdate();
-    const interval = setInterval(getPositionAndUpdate, 53000);
+    const interval = setInterval(getPositionAndUpdate, 3000);
 
     return () => clearInterval(interval);
   }, [routeStarted]);
