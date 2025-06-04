@@ -1,10 +1,16 @@
+"use client"
+
 import { useAuth } from "../../../context/Authcontext"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense, lazy } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, ShoppingCart, MapPin, CreditCard } from "lucide-react"
+import { ArrowLeft, ShoppingCart, MapPin, CreditCard, Navigation, Map } from "lucide-react"
 import { baseURLRest } from "../../../config"
 import PayPal from "./PayPal/Paypal"
-import "./checkout-modal.css"
+import LoadingSpinner from "../../../components/Loading/LoadingSpinner"
+import "./checkout-page.css"
+
+// Lazy load del modal de mapa
+const MapModal = lazy(() => import("./Map/MapModal"))
 
 type CartItem = {
   ProductId: number
@@ -14,21 +20,32 @@ type CartItem = {
   CartId: number
 }
 
+type LocationData = {
+  latitude: number
+  longitude: number
+  address: string
+}
+
 const CheckoutPage = () => {
   const { user, loading } = useAuth()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [cartId, setCartId] = useState<number | null>(null)
-  const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [locationData, setLocationData] = useState<LocationData | null>(null)
   const [loadingp, setLoading] = useState(false)
+  const [loadingLocation, setLoadingLocation] = useState(false)
+  const [showMapModal, setShowMapModal] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [messageType, setMessageType] = useState<"success" | "error" | "warning">("success")
   const navigate = useNavigate()
-  const clientID = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
+  const clientID = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1
+
+  // Agregar estados separados para coordenadas internas
+  const [internalCoordinates, setInternalCoordinates] = useState<{ lat: number; lng: number } | null>(null)
+  const [displayAddress, setDisplayAddress] = useState<string>("")
 
   useEffect(() => {
     async function fetchCart() {
       try {
-        alert(clientID)
         const res = await fetch(`${baseURLRest}/get-cart/${clientID}`)
         if (!res.ok) throw new Error("No se pudo obtener el carrito")
         const data: CartItem[] = await res.json()
@@ -41,15 +58,115 @@ const CheckoutPage = () => {
         setMessageType("error")
       }
     }
-    if (loading) return;
+    if (loading) return
     fetchCart()
   }, [clientID])
 
   const getTotal = () => cartItems.reduce((acc, item) => acc + (item.Price ?? 0) * (item.Quantity ?? 0), 0)
 
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setMessage("Geolocalización no soportada en este navegador")
+      setMessageType("error")
+      return
+    }
+
+    setLoadingLocation(true)
+    setMessage("Obteniendo ubicación actual...")
+    setMessageType("success")
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+
+        try {
+          // Hacer reverse geocoding para obtener dirección legible
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          )
+          const data = await response.json()
+          const readableAddress = data.display_name || `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+
+          // Guardar coordenadas internamente
+          setInternalCoordinates({ lat: latitude, lng: longitude })
+          // Mostrar solo la dirección al usuario
+          setDisplayAddress(readableAddress)
+
+          setLocationData({
+            latitude,
+            longitude,
+            address: readableAddress,
+          })
+
+          setMessage("Ubicación obtenida exitosamente")
+          setMessageType("success")
+          setTimeout(() => setMessage(null), 3000)
+        } catch (error) {
+          // Si falla el reverse geocoding, mostrar coordenadas
+          const fallbackAddress = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+          setInternalCoordinates({ lat: latitude, lng: longitude })
+          setDisplayAddress(fallbackAddress)
+
+          setLocationData({
+            latitude,
+            longitude,
+            address: fallbackAddress,
+          })
+
+          setMessage("Ubicación obtenida (sin dirección detallada)")
+          setMessageType("warning")
+        } finally {
+          setLoadingLocation(false)
+        }
+      },
+      (error) => {
+        setLoadingLocation(false)
+        let errorMessage = "Error al obtener ubicación"
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Permiso de ubicación denegado"
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Ubicación no disponible"
+            break
+          case error.TIMEOUT:
+            errorMessage = "Tiempo de espera agotado"
+            break
+        }
+
+        setMessage(errorMessage)
+        setMessageType("error")
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      },
+    )
+  }
+
+  const handleMapSelection = (latitude: number, longitude: number, address: string) => {
+    // Guardar coordenadas internamente
+    setInternalCoordinates({ lat: latitude, lng: longitude })
+    // Mostrar solo la dirección al usuario
+    setDisplayAddress(address)
+
+    setLocationData({
+      latitude,
+      longitude,
+      address,
+    })
+
+    setShowMapModal(false)
+    setMessage("Ubicación seleccionada exitosamente")
+    setMessageType("success")
+    setTimeout(() => setMessage(null), 3000)
+  }
+
   const handlePayPalSuccess = async (details: any) => {
-    if (!deliveryAddress.trim()) {
-      setMessage("Por favor ingresa la dirección de entrega")
+    if (!internalCoordinates || !displayAddress) {
+      setMessage("Por favor selecciona una ubicación de entrega")
       setMessageType("warning")
       return
     }
@@ -64,18 +181,17 @@ const CheckoutPage = () => {
     setMessageType("success")
 
     try {
-      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cartId,
-          deliveryAddress,
-          paymentDetails: details,
-        }),
-      })
-      if (!res.ok) throw new Error("Error al crear la orden")
-      const result = await res.json()
-      setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
+      // Alerta con las coordenadas internas (útiles para ti)
+      alert(
+        `DATOS INTERNOS:
+        CartID: ${cartId}
+        ClientID: ${clientID}
+        Dirección mostrada: ${displayAddress}
+        Latitud: ${internalCoordinates.lat}
+        Longitud: ${internalCoordinates.lng}
+        PayPal Details: ${JSON.stringify(details)}`,
+      )
+
       setMessageType("success")
       setTimeout(() => {
         setLoading(false)
@@ -104,17 +220,26 @@ const CheckoutPage = () => {
       setMessageType("warning")
       return
     }
+    if (!internalCoordinates || !displayAddress) {
+      setMessage("Por favor selecciona una ubicación de entrega")
+      setMessageType("warning")
+      return
+    }
+
     setLoading(true)
     setMessage(null)
     try {
-      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartId, deliveryAddress }),
-      })
-      if (!res.ok) throw new Error("Error al crear la orden")
-      const result = await res.json()
-      setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
+      // Alerta con las coordenadas internas (útiles para ti)
+      alert(
+        `DATOS INTERNOS:
+        CartID: ${cartId}
+        ClientID: ${clientID}
+        Dirección mostrada: ${displayAddress}
+        Latitud: ${internalCoordinates.lat}
+        Longitud: ${internalCoordinates.lng}
+        Método: Pago Tradicional`,
+      )
+
       setMessageType("success")
       setTimeout(() => {
         setLoading(false)
@@ -183,19 +308,38 @@ const CheckoutPage = () => {
                 <MapPin size={16} />
                 Dirección de Entrega
               </h3>
-              <input
-                type="text"
-                value={deliveryAddress}
-                onChange={(e) => {
-                  setDeliveryAddress(e.target.value)
-                  if (e.target.value.trim()) setMessage(null)
-                }}
-                placeholder="Calle 123, Colonia, Ciudad"
-                className="checkout-input-compact"
-                disabled={loadingp}
-              />
-              {message && <div className={`checkout-message ${messageType}`}>{message}</div>}
 
+              <div className="location-input-container">
+                <input
+                  type="text"
+                  value={displayAddress}
+                  placeholder="Selecciona una ubicación usando los botones"
+                  className="checkout-input-readonly"
+                  readOnly
+                />
+
+                <div className="location-buttons">
+                  <button
+                    onClick={getCurrentLocation}
+                    disabled={loadingLocation || loadingp}
+                    className="location-button current-location"
+                  >
+                    {loadingLocation ? <LoadingSpinner size={16} /> : <Navigation size={16} />}
+                    {loadingLocation ? "Obteniendo..." : "Mi Ubicación"}
+                  </button>
+
+                  <button
+                    onClick={() => setShowMapModal(true)}
+                    disabled={loadingp}
+                    className="location-button map-selection"
+                  >
+                    <Map size={16} />
+                    Seleccionar en Mapa
+                  </button>
+                </div>
+              </div>
+
+              {message && <div className={`checkout-message ${messageType}`}>{message}</div>}
             </div>
 
             <div className="checkout-section">
@@ -204,7 +348,7 @@ const CheckoutPage = () => {
                 Método de Pago
               </h3>
               <div className="checkout-payment-methods">
-                {deliveryAddress.trim() ? (
+                {internalCoordinates && displayAddress ? (
                   <>
                     <div className="checkout-paypal-container">
                       <PayPal
@@ -217,27 +361,34 @@ const CheckoutPage = () => {
                     <div className="checkout-divider">
                       <span>o</span>
                     </div>
-                    <button
-                      onClick={handleTraditionalPay}
-                      disabled={loadingp}
-                      className="checkout-traditional-button"
-                    >
+                    <button onClick={handleTraditionalPay} disabled={loadingp} className="checkout-traditional-button">
                       Pago Tradicional
                     </button>
                   </>
                 ) : (
                   <div className="checkout-message warning">
-                    Ingresa una dirección para habilitar los métodos de pago
+                    Selecciona una ubicación para habilitar los métodos de pago
                   </div>
                 )}
               </div>
-
             </div>
-
           </div>
         )}
       </div>
+
+      {showMapModal && (
+        <Suspense
+          fallback={
+            <div className="modal-loading">
+              <LoadingSpinner size={32} />
+            </div>
+          }
+        >
+          <MapModal onLocationSelect={handleMapSelection} onClose={() => setShowMapModal(false)} />
+        </Suspense>
+      )}
     </div>
   )
 }
+
 export default CheckoutPage
