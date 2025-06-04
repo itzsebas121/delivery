@@ -1,14 +1,12 @@
 @import "../../../StylesGeneral/style.css";
 
 .product-container-compact {
-  max-width: 1400px;
   margin: 0 auto;
   padding: var(--spacing-lg);
-  background: var(--light-gray);
+  background: var(--accent-cream);
   min-height: 100vh;
 }
 
-/* Header compacto */
 .product-header-compact {
   display: flex;
   justify-content: space-between;
@@ -22,8 +20,10 @@
 
 .product-title-section {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: center;
   gap: var(--spacing-md);
+
 }
 
 .product-title-compact {
@@ -110,7 +110,6 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Grid compacto mejorado - máximo 4 por fila */
 .product-grid-compact {
   display: grid;
   gap: var(--spacing-lg);
@@ -189,47 +188,44 @@
   margin: 0;
 }
 
-/* Paginación compacta */
-.pagination-compact {
+.paginationp-compact {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: var(--spacing-md);
-  background: var(--white);
-  padding: var(--spacing-md);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
-.pagination-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--light-gray);
-  background: var(--white);
-  color: var(--dark-gray);
-  border-radius: var(--radius-md);
+.paginationp-btn,
+.paginationp-number {
+  background-color: var(--secondary-orange);
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--white);
 }
 
-.pagination-btn:hover:not(:disabled) {
-  border-color: var(--primary-orange);
-  color: var(--primary-orange);
+.paginationp-btn:hover,
+.paginationp-number:hover {
+  background-color: var(--primary-orange);
+  color: var(--white);
 }
 
-.pagination-btn:disabled {
-  opacity: 0.5;
+.paginationp-btn:disabled {
+  background-color: #e0e0e0;
+  color: #aaa;
   cursor: not-allowed;
 }
 
-.pagination-info {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--dark-gray);
-  padding: 0 var(--spacing-md);
+
+.paginationp-info {
+  font-size: 0.95rem;
+  color: #555;
+  margin: 0 0.5rem;
 }
 
 /* Responsive mejorado - máximo 4 por fila */
@@ -263,12 +259,10 @@
   }
 
   .product-controls {
-    flex-direction: column;
     gap: var(--spacing-md);
   }
 
   .product-filters-compact {
-    flex-direction: column;
     gap: var(--spacing-sm);
   }
 
@@ -292,14 +286,27 @@
 }
 
 @media (max-width: 480px) {
+  .product-image-container {
+        height: 110px;
+    }
+    .product-card-compact {
+      align-items: center;
+      min-height: 260px;
+    }
   .product-grid-compact.grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: var(--spacing-sm);
   }
 
   .product-title-section {
     flex-direction: column;
-    align-items: flex-start;
     gap: var(--spacing-xs);
+  }
+  .stock-indicator{
+    font-size: var(--font-size-xs);
+    border-radius: var(--radius-sm);
+  }
+  .product-content{
+    align-items: center;
   }
 }

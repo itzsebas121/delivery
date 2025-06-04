@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Search, Filter, ChevronLeft, ChevronRight, Grid, List, Package } from "lucide-react"
 import { baseURLRest } from "../../../config"
 import ProductCard from "../../../components/ProductCard"
@@ -16,10 +16,14 @@ const Product = () => {
   const [limit] = useState<number>(12)
   const [nameFilter, setNameFilter] = useState<string>("")
   const [categoryFilter, setCategoryFilter] = useState<string>("")
-  const [addedProductId, setAddedProductId] = useState < (number) | null>(null)
+  const [addedProductId, setAddedProductId] = useState<(number) | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const gridRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (gridRef.current) {
+      gridRef.current.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
     const fetchProducts = async () => {
       setLoadingp(true)
       try {
@@ -35,7 +39,7 @@ const Product = () => {
           ),
           new Promise((resolve) => setTimeout(resolve, 300)),
         ])
-  
+
         const data = await response.json()
         setProducts(data)
       } catch (error) {
@@ -44,7 +48,7 @@ const Product = () => {
         setLoadingp(false)
       }
     }
-    if (loading) return 
+    if (loading) return
     fetchProducts()
   }, [page, limit, nameFilter, categoryFilter, clienteId])
 
@@ -56,7 +60,7 @@ const Product = () => {
       return () => clearTimeout(timer)
     }
   }, [addedProductId])
-  if(loading){
+  if (loading) {
     return <div className="loading-spinner">Cargando...</div>
   }
 
@@ -104,7 +108,7 @@ const Product = () => {
   return (
     <div className="product-container-compact">
       {/* Header compacto */}
-      <div className="product-header-compact">
+      <div ref={gridRef} className="product-header-compact">
         <div className="product-title-section">
           <h1 className="product-title-compact">Productos</h1>
           <span className="product-count">{products.length} productos</span>
@@ -151,7 +155,7 @@ const Product = () => {
       </div>
 
       {/* Grid de productos */}
-      <div className={`product-grid-compact ${viewMode}`}>
+      <div  className={`product-grid-compact ${viewMode}`} id="product-grid-compact">
         {loadingp ? (
           Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={index} />)
         ) : products.length > 0 ? (
@@ -182,14 +186,14 @@ const Product = () => {
 
       {/* Paginación compacta */}
       {!loading && products.length > 0 && (
-        <div className="pagination-compact">
-          <button className="pagination-btn" onClick={() => setPage(page - 1)} disabled={page === 1}>
+        <div className="paginationp-compact">
+          <button className="paginationp-btn" onClick={() => setPage(page - 1)} disabled={page === 1}>
             <ChevronLeft size={16} />
           </button>
 
-          <span className="pagination-info">Página {page}</span>
+          <span className="paginationp-info">{page}</span>
 
-          <button className="pagination-btn" onClick={() => setPage(page + 1)} disabled={products.length < limit}>
+          <button className="paginationp-btn" onClick={() => setPage(page + 1)} disabled={products.length < limit}>
             <ChevronRight size={16} />
           </button>
         </div>

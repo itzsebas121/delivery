@@ -30,7 +30,7 @@ const CheckoutPage = () => {
   const { user, loading } = useAuth()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [cartId, setCartId] = useState<number | null>(null)
-  const [locationData, setLocationData] = useState<LocationData | null>(null)
+  const [, setLocationData] = useState<LocationData | null>(null)
   const [loadingp, setLoading] = useState(false)
   const [loadingLocation, setLoadingLocation] = useState(false)
   const [showMapModal, setShowMapModal] = useState(false)
@@ -164,7 +164,7 @@ const CheckoutPage = () => {
     setTimeout(() => setMessage(null), 3000)
   }
 
-  const handlePayPalSuccess = async (details: any) => {
+  const handlePayPalSuccess = async (_details: any) => {
     if (!internalCoordinates || !displayAddress) {
       setMessage("Por favor selecciona una ubicación de entrega")
       setMessageType("warning")
@@ -180,19 +180,10 @@ const CheckoutPage = () => {
     setMessage("Procesando orden después del pago exitoso...")
     setMessageType("success")
     try {
-      /* alert(
-        `DATOS INTERNOS:
-        CartID: ${cartId}
-        ClientID: ${clientID}
-        Dirección mostrada: ${displayAddress}
-        Latitud: ${internalCoordinates.lat}
-        Longitud: ${internalCoordinates.lng}
-        PayPal Details: ${JSON.stringify(details)}`,
-      ) */
-      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
+     const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartId, displayAddress }),
+        body: JSON.stringify({ cartId, deliveryAddress:displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
       })
       if (!res.ok) throw new Error("Error al crear la orden")
       const result = await res.json()
@@ -235,16 +226,6 @@ const CheckoutPage = () => {
     setLoading(true)
     setMessage(null)
     try {
-      alert(
-        `DATOS INTERNOS:
-        CartID: ${cartId}
-        ClientID: ${clientID}
-        Dirección mostrada: ${displayAddress}
-        Latitud: ${internalCoordinates.lat}
-        Longitud: ${internalCoordinates.lng}
-        Método: Pago Tradicional`,
-      )
-
       const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
