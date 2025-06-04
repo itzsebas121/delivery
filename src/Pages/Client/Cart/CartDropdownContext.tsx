@@ -16,7 +16,6 @@ const CartDropdownContent = () => {
   const { user, loading } = useAuth()
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const navigate = useNavigate()
-  // Use the clientId from user if available and user is a Client, otherwise fallback to 1
   const clientId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
 
   useEffect(() => {
@@ -43,7 +42,7 @@ const CartDropdownContent = () => {
   if (loading) {
     return <div className="nav__cart-loading">Cargando...</div>
   }
-  const debounceTimers = useRef<{ [key: number]: number }>({})
+  const debounceTimers = useRef<{ [key: number]: ReturnType<typeof setTimeout> }>({})
 
   const removeFromCart = async (productId: number, _cartId: number) => {
     setCartItems((prev) => prev.filter((item) => item.ProductId !== productId))
