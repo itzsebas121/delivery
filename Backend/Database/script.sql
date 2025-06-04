@@ -260,7 +260,9 @@ END;
 
 CREATE OR ALTER PROCEDURE CreateOrderFromCart
   @CartId INT,
-  @DeliveryAddress VARCHAR(255)
+  @DeliveryAddress VARCHAR(255),
+  @DeliveryLatitude DECIMAL(9,6),
+  @DeliveryLongitude DECIMAL(9,6)
 AS
 BEGIN
   SET NOCOUNT ON;
@@ -282,9 +284,27 @@ BEGIN
       THROW 50000, 'Carrito no encontrado o ya fue comprado', 1;
     END
 
-    -- Insertar orden inicial sin total
-    INSERT INTO ORDERS (ClientId, DeliveryAddress, Total, DiscountedTotal, Status)
-    VALUES (@ClientId, @DeliveryAddress, 0, 0, 'Pending');
+    -- Insertar orden inicial con datos de entrega
+    INSERT INTO ORDERS (
+      ClientId, 
+      DeliveryAddress, 
+      DeliveryAddressName,
+      DeliveryLatitude, 
+      DeliveryLongitude, 
+      Total, 
+      DiscountedTotal, 
+      Status
+    )
+    VALUES (
+      @ClientId, 
+      @DeliveryAddress, 
+      @DeliveryAddress,
+      @DeliveryLatitude, 
+      @DeliveryLongitude, 
+      0, 
+      0, 
+      'Pending'
+    );
 
     SET @OrderId = SCOPE_IDENTITY();
 
@@ -307,7 +327,7 @@ BEGIN
     -- Actualizar totales en la orden
     UPDATE ORDERS
     SET Total = @Total,
-        DiscountedTotal = @Total  -- Aquí puedes aplicar descuentos si quieres
+        DiscountedTotal = @Total
     WHERE OrderId = @OrderId;
 
     -- Marcar carrito como inactivo (comprado)
@@ -328,6 +348,7 @@ BEGIN
     THROW;
   END CATCH
 END;
+
 GO
 CREATE OR ALTER PROCEDURE GetProductHistoryByClient
     @ClientId INT

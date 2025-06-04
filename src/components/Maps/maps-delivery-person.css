@@ -1,0 +1,20 @@
+.route-info {
+  background: #ebebeb;
+  width: 100%;
+  padding: 10px 15px;
+  border-Radius: 8px;
+  font-Size: 14px;
+  font-Weight: 500;
+  color: #333;
+  position: absolute;
+  top: 0px;
+  text-transform: capitalize;
+  border: #e4e4e478 1px solid;
+}
+@media (max-width: 768px) {
+  .route-info {
+    font-Size: 12px;
+    padding: 8px 12px;
+  }
+  
+}

@@ -1,9 +1,11 @@
 "use client"
+
 import { useState } from "react"
-import { X, MapPin, Navigation, CheckCircle, Phone, User, DollarSign, Loader2, Calendar } from 'lucide-react'
+import { X, MapPin, Navigation, CheckCircle, Phone, User, DollarSign, Loader2, Calendar } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 import MapsDeliveryPerson from "../../../components/Maps/MapsDeliveryPerson"
-import "./OrderDeliveryModal.css" // Ensure you have the correct path to your CSS file
+import "./OrderDeliveryModal.css"
+
 interface Order {
   OrderId: number
   OrderDate: string
@@ -26,10 +28,12 @@ interface OrderDeliveryModalProps {
   onCompleteOrder: (orderId: number) => Promise<void>
   deliveryId: number
 }
+
 export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCompleteOrder }: OrderDeliveryModalProps) {
   const [loadingLocation, setLoadingLocation] = useState<boolean>(false)
   const [loadingRoute, setLoadingRoute] = useState<boolean>(false)
   const { showSuccess, showError } = useAlert()
+
   const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -75,6 +79,7 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
       setLoadingRoute(false)
     }
   }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("es-ES", {
       day: "2-digit",
@@ -84,7 +89,8 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
     })
   }
 
-  const formatCurrency = (amount: number) => `${amount.toFixed(2)}`
+  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container delivery-modal" onClick={(e) => e.stopPropagation()}>
@@ -101,7 +107,13 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
             <X size={20} />
           </button>
         </div>
-        <div className="modal-body">
+        <div className="map-header">
+          <h3>
+            <Navigation size={16} />
+            Mapa de Navegación
+          </h3>
+        </div>
+        <div className="modal-body-dp">
           <div className="delivery-content">
             {/* Info Panel */}
             <div className="delivery-info">
@@ -126,6 +138,7 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
                   )}
                 </div>
               </div>
+
               <div className="info-section">
                 <h3>
                   <MapPin size={16} />
@@ -147,54 +160,51 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
                 </div>
               </div>
             </div>
+
             <div className="delivery-map">
-              <div className="map-header">
-                <h3>
-                  <Navigation size={16} />
-                  Mapa de Navegación
-                </h3>
 
-              </div>
-              <div className="map-container" style= { {height: "100%", display: "flex", flexDirection: "column"} }>
-               <MapsDeliveryPerson startCoordinates={order.StartCoordinates||","} deliveryCoordinates={order.DeliveryCoordinates||","} />
-
+              <div className="map-container" style={{ height: "100%", display: "flex", flexDirection: "column"}}>
+                <MapsDeliveryPerson
+                  startCoordinates={order.StartCoordinates || ","}
+                  deliveryCoordinates={order.DeliveryCoordinates || ","}
+                />
               </div>
             </div>
           </div>
-          <div className="modal-actions">
-            {!order.IsRouteStarted && order.Status === "En camino" ? (
-              <button className="btn-primary" onClick={handleStartRoute} disabled={loadingRoute || loadingLocation}>
-                {loadingLocation ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Obteniendo ubicación...
-                  </>
-                ) : loadingRoute ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Iniciando ruta...
-                  </>
-                ) : (
-                  <>
-                    <Navigation size={16} />
-                    Iniciar Ruta
-                  </>
-                )}
-              </button>
-            ) : order.IsRouteStarted && order.Status === "En camino" ? (
-              <button className="btn-success" onClick={() => onCompleteOrder(order.OrderId)}>
-                <CheckCircle size={16} />
-                Completar Entrega
-              </button>
-            ) : null}
 
-            <button className="btn-secondary" onClick={onClose}>
-              Cerrar
+        </div>
+        <div className="modal-actions-dp">
+          {!order.IsRouteStarted && order.Status === "En camino" ? (
+            <button className="btn-primary" onClick={handleStartRoute} disabled={loadingRoute || loadingLocation}>
+              {loadingLocation ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Obteniendo ubicación...
+                </>
+              ) : loadingRoute ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Iniciando ruta...
+                </>
+              ) : (
+                <>
+                  <Navigation size={16} />
+                  Iniciar Ruta
+                </>
+              )}
             </button>
-          </div>
+          ) : order.IsRouteStarted && order.Status === "En camino" ? (
+            <button className="btn-success" onClick={() => onCompleteOrder(order.OrderId)}>
+              <CheckCircle size={16} />
+              Completar Entrega
+            </button>
+          ) : null}
+
+          <button className="btn-secondary" onClick={onClose}>
+            Cerrar
+          </button>
         </div>
       </div>
     </div>
   )
-
 }

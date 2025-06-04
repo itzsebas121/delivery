@@ -108,26 +108,38 @@ app.post("/create-products", async (req, res) => {
 // Endpoint para crear una orden a partir de un carrito
 app.post("/create-order-from-cart", async (req, res) => {
   try {
-    const { cartId, deliveryAddress } = req.body;
+    const {
+      cartId,
+      deliveryAddress,
+      deliveryLatitude,
+      deliveryLongitude
+    } = req.body;
 
-    if (!cartId || !deliveryAddress) {
-      return res.status(400).json({ message: "Faltan datos obligatorios: cartId y deliveryAddress" });
+    // Validación básica
+    if (!cartId || !deliveryAddress || deliveryLatitude == null || deliveryLongitude == null) {
+      return res.status(400).json({
+        message: "Faltan datos obligatorios: cartId, deliveryAddress, deliveryLatitude y deliveryLongitude"
+      });
     }
 
     const request = pool.request()
       .input("CartId", sql.Int, cartId)
-      .input("DeliveryAddress", sql.VarChar(255), deliveryAddress);
+      .input("DeliveryAddress", sql.VarChar(255), deliveryAddress)
+      .input("DeliveryLatitude", sql.Decimal(9, 6), deliveryLatitude)
+      .input("DeliveryLongitude", sql.Decimal(9, 6), deliveryLongitude);
 
     const result = await request.execute("CreateOrderFromCart");
 
-    // El procedimiento devuelve el OrderId en un SELECT
     const orderId = result.recordset[0]?.OrderId;
 
     if (!orderId) {
       return res.status(500).json({ message: "No se pudo crear la orden" });
     }
 
-    res.status(201).json({ message: "Orden creada exitosamente", orderId });
+    res.status(201).json({
+      message: "Orden creada exitosamente",
+      orderId
+    });
   } catch (err) {
     console.error("Error al crear orden desde carrito:", err);
     res.status(500).json({ message: "Error interno del servidor" });

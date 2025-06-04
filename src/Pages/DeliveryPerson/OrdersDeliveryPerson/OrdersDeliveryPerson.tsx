@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { useAuth } from "../../../context/Authcontext"
 import {
@@ -43,7 +44,7 @@ export function OrdersDeliveryPerson() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loadingp, setLoading] = useState<boolean>(true)
   const [activeTab, setActiveTab] = useState<"En camino" | "Completada" | "Cancelada">("En camino")
-  const deliveryId = user?.rol === "Delivery" && "deliveryId" in user ? (user as any).deliveryId : 0;
+  const deliveryId = user?.rol === "Delivery" && "deliveryId" in user ? (user as any).deliveryId : 0
 
   // Modal states
   const [showOrderModal, setShowOrderModal] = useState<boolean>(false)
@@ -61,9 +62,6 @@ export function OrdersDeliveryPerson() {
 
   const { showSuccess, showError, showConfirm } = useAlert()
 
-  useEffect(() => {
-
-  }, [])
   const fetchAllOrders = async () => {
     if (!deliveryId || loading) return
 
@@ -90,13 +88,14 @@ export function OrdersDeliveryPerson() {
       setLoading(false)
     }
   }
+
   // Fetch all orders
-  useEffect(()  => {
+  useEffect(() => {
     if (deliveryId) {
-       fetchAllOrders()
-      
+      fetchAllOrders()
     }
   }, [deliveryId])
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -104,7 +103,6 @@ export function OrdersDeliveryPerson() {
       </div>
     )
   }
-
 
   const handleStartRoute = async (orderId: number, startLatitude: number, startLongitude: number) => {
     if (!deliveryId) return
@@ -155,7 +153,6 @@ export function OrdersDeliveryPerson() {
   }
 
   const handleCompleteOrder = async (orderId: number) => {
-
     showConfirm("Completar orden", "¿Estás seguro de que deseas marcar esta orden como completada?", async () => {
       try {
         const response = await fetch(`${baseURLRest}/complete-order/${orderId}`, {
@@ -399,65 +396,65 @@ export function OrdersDeliveryPerson() {
 
                   <div className="order-card-body">
                     <div className="order-info-grid">
-                      <div className="info-item">
-                        <div className="info-icon">
+                      <div className="info-item-dp customer-name">
+                        <div className="info-icon ">
                           <User size={16} />
+                          <span className="info-label">Cliente</span>
                         </div>
                         <div className="info-content">
-                          <span className="info-label">Cliente</span>
                           <span className="info-value">{order.ClientName}</span>
                         </div>
                       </div>
 
                       {order.ClientPhone && (
-                        <div className="info-item">
+                        <div className="info-item-dp customer-phone">
                           <div className="info-icon">
                             <Phone size={16} />
+                            <span className="info-label">Teléfono</span>
                           </div>
                           <div className="info-content">
-                            <span className="info-label">Teléfono</span>
                             <span className="info-value">{order.ClientPhone}</span>
                           </div>
                         </div>
                       )}
 
-                      <div className="info-item">
+                      <div className="info-item-dp delivery-address">
                         <div className="info-icon">
                           <MapPin size={16} />
+                          <span className="info-label">Dirección</span>
                         </div>
                         <div className="info-content">
-                          <span className="info-label">Dirección</span>
                           <span className="info-value">{order.DeliveryAddress}</span>
                         </div>
                       </div>
 
-                      <div className="info-item">
+                      <div className="info-item-dp order-total">
                         <div className="info-icon">
                           <DollarSign size={16} />
+                          <span className="info-label">Total</span>
                         </div>
                         <div className="info-content">
-                          <span className="info-label">Total</span>
                           <span className="info-value price">{formatCurrency(order.Total)}</span>
                         </div>
                       </div>
 
-                      <div className="info-item">
+                      <div className="info-item-dp order-date">
                         <div className="info-icon">
                           <Calendar size={16} />
+                          <span className="info-label">Fecha</span>
                         </div>
                         <div className="info-content">
-                          <span className="info-label">Fecha</span>
                           <span className="info-value">{formatDate(order.OrderDate)}</span>
                         </div>
                       </div>
 
                       {order.IsRouteStarted && (
-                        <div className="info-item route-started">
+                        <div className="info-item-dp route-started order-status">
                           <div className="info-icon">
                             <Route size={16} />
+                            <span className="info-label">Estado</span>
                           </div>
                           <div className="info-content">
-                            <span className="info-label">Estado</span>
                             <span className="info-value">Ruta iniciada</span>
                           </div>
                         </div>

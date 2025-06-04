@@ -37,7 +37,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
   const [loadingp, setLoadingp] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user, loading } = useAuth()
-  const clientId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1;
+  const clientId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState("")
@@ -50,7 +50,6 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
   // Modal
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
-
 
   const fetchOrders = async () => {
     setLoadingp(true)
@@ -72,6 +71,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
       setLoadingp(false)
     }
   }
+
   // Cargar pedidos
   useEffect(() => {
     if (!loading) {
@@ -87,6 +87,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
       </div>
     )
   }
+
   // Filtrar pedidos
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -202,11 +203,10 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
           {paginatedOrders.map((order) => (
             <div key={order.OrderId} className="order-card" onClick={() => openOrderDetails(order.OrderId)}>
               {/* Badge de estado flotante */}
-              <div className={`order-status-floating ${order.Status.toLowerCase().replace(/\s+/g, '-')}`}>
+              <div className={`order-status-floating ${order.Status.toLowerCase().replace(/\s+/g, "-")}`}>
                 {getStatusIcon(order.Status)}
                 {getStatusText(order.Status)}
               </div>
-
 
               <div className="order-card-content">
                 <div className="order-card-header">
@@ -338,6 +338,39 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
         </h1>
         <p className="order-history-subtitle">Revisa todos tus pedidos y su estado actual</p>
       </div>
+      <div className="order-stats">
+        <div className="order-stat-card">
+          <div className="order-stat-icon pending">
+            <Clock size={20} />
+          </div>
+          <div className="order-stat-number">{stats.pending}</div>
+          <div className="order-stat-label">Pendientes</div>
+        </div>
+
+        <div className="order-stat-card">
+          <div className="order-stat-icon in-transit">
+            <Truck size={20} />
+          </div>
+          <div className="order-stat-number">{stats.inTransit}</div>
+          <div className="order-stat-label">En tránsito</div>
+        </div>
+
+        <div className="order-stat-card">
+          <div className="order-stat-icon completed">
+            <CheckCircle size={20} />
+          </div>
+          <div className="order-stat-number">{stats.completed}</div>
+          <div className="order-stat-label">Completados</div>
+        </div>
+
+        <div className="order-stat-card">
+          <div className="order-stat-icon cancelled">
+            <XCircle size={20} />
+          </div>
+          <div className="order-stat-number">{stats.Cancelada}</div>
+          <div className="order-stat-label">Cancelados</div>
+        </div>
+      </div>
 
       {/* Controles y filtros */}
       <div className="order-history-controls">
@@ -375,40 +408,6 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <div className="order-stats">
-        <div className="order-stat-card">
-          <div className="order-stat-icon pending">
-            <Clock size={20} />
-          </div>
-          <div className="order-stat-number">{stats.pending}</div>
-          <div className="order-stat-label">Pendientes</div>
-        </div>
-
-        <div className="order-stat-card">
-          <div className="order-stat-icon in-transit">
-            <Truck size={20} />
-          </div>
-          <div className="order-stat-number">{stats.inTransit}</div>
-          <div className="order-stat-label">En tránsito</div>
-        </div>
-
-        <div className="order-stat-card">
-          <div className="order-stat-icon completed">
-            <CheckCircle size={20} />
-          </div>
-          <div className="order-stat-number">{stats.completed}</div>
-          <div className="order-stat-label">Completados</div>
-        </div>
-
-        <div className="order-stat-card">
-          <div className="order-stat-icon cancelled">
-            <XCircle size={20} />
-          </div>
-          <div className="order-stat-number">{stats.Cancelada}</div>
-          <div className="order-stat-label">Cancelados</div>
-        </div>
-      </div>
 
       {/* Secciones de pedidos */}
       {filteredOrders.length === 0 ? (
@@ -443,4 +442,5 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
     </div>
   )
 }
+
 export default OrderHistory

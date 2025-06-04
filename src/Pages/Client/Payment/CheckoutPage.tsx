@@ -179,10 +179,8 @@ const CheckoutPage = () => {
     setLoading(true)
     setMessage("Procesando orden después del pago exitoso...")
     setMessageType("success")
-
     try {
-      // Alerta con las coordenadas internas (útiles para ti)
-      alert(
+      /* alert(
         `DATOS INTERNOS:
         CartID: ${cartId}
         ClientID: ${clientID}
@@ -190,18 +188,26 @@ const CheckoutPage = () => {
         Latitud: ${internalCoordinates.lat}
         Longitud: ${internalCoordinates.lng}
         PayPal Details: ${JSON.stringify(details)}`,
-      )
-
+      ) */
+      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, displayAddress }),
+      })
+      if (!res.ok) throw new Error("Error al crear la orden")
+      const result = await res.json()
+      setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
       setMessageType("success")
       setTimeout(() => {
         setLoading(false)
-        navigate("/dashboard-cliente/history")
+        navigate("../history")
       }, 3000)
     } catch (error) {
       setLoading(false)
-      setMessage("Error al procesar la orden")
+      setMessage("Error al procesar el pago")
       setMessageType("error")
     }
+
   }
 
   const handlePayPalError = (_error: any) => {
@@ -229,7 +235,6 @@ const CheckoutPage = () => {
     setLoading(true)
     setMessage(null)
     try {
-      // Alerta con las coordenadas internas (útiles para ti)
       alert(
         `DATOS INTERNOS:
         CartID: ${cartId}
@@ -240,6 +245,14 @@ const CheckoutPage = () => {
         Método: Pago Tradicional`,
       )
 
+      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, deliveryAddress:displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
+      })
+      if (!res.ok) throw new Error("Error al crear la orden")
+      const result = await res.json()
+      setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
       setMessageType("success")
       setTimeout(() => {
         setLoading(false)
@@ -289,11 +302,15 @@ const CheckoutPage = () => {
               <div className="checkout-items-compact">
                 {cartItems.map((item) => (
                   <div key={item.ProductId} className="checkout-item-compact">
-                    <span className="checkout-item-name-compact">{item.ProductName}</span>
-                    <span className="checkout-item-qty">{item.Quantity}x</span>
-                    <span className="checkout-item-price-compact">
-                      ${((item.Price ?? 0) * (item.Quantity ?? 0)).toFixed(2)}
-                    </span>
+                    <div className="checkout-item-header">
+                      <span className="checkout-item-name-compact">{item.ProductName}</span>
+                      <span className="checkout-item-qty">{item.Quantity}x</span>
+                    </div>
+                    <div className="checkout-item-footer">
+                      <span className="checkout-item-price-compact">
+                        ${((item.Price ?? 0) * (item.Quantity ?? 0)).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 ))}
                 <div className="checkout-total-compact">
