@@ -6,7 +6,7 @@ export default function HomeDistributor() {
   }
   return (
     <div>
-      <h1>Home {user?.rol}</h1>
+      <h1>Home {user?.nombre}</h1>
     </div>
   );
 }

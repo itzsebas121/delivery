@@ -12,7 +12,7 @@ import "./Login.css"
 
 export default function Login() {
   const navigate = useNavigate()
-  const {showError} = useAlert()
+  const {showError, showSuccess} = useAlert()
   const { login } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
@@ -69,8 +69,9 @@ export default function Login() {
         showError("Acceso denegado",token.Message || 'Error al iniciar sesión');
         return;
       }
-      const decodedToken: any = jwtDecode(token);
-      login(token)
+      const decodedToken: any = jwtDecode(token.token);
+      login(token.token)
+      showSuccess("¡Has iniciado sesión correctamente!", `Bienvenido ${decodedToken.name}` )
       if (decodedToken.role === "Client") {
         navigate("/dashboard-cliente")
       } else if (decodedToken.role === "Distributor") {

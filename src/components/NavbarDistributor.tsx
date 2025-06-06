@@ -52,7 +52,7 @@ const NavbarDistributor = () => {
   return (
     <nav className="nav">
       <div className="nav__logo">
-        <h1>My Website</h1>
+        <h1>Hot-Grill</h1>
       </div>
 
       <div className="nav__menu-toggle" onClick={toggleMenu}>

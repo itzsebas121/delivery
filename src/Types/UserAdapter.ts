@@ -1,22 +1,22 @@
 
-import { Admin, Client, Delivery } from './User';
+import { Distributor, Client, Delivery } from './User';
 
-export type User =   Admin| Client | Delivery;
+export type User =   Distributor| Client | Delivery;
 
 export function adaptarUsuario(data: any): User {
   const base = {
     id: data.userId ?? data.id ?? '',
     nombre: data.name ?? 'Sin Nombre',
     email: data.email ?? 'Sin Email',
-    rol: data.RoleName ?? data.role??'Client',
+    rol: data.RoleName ?? data.role??'',
   };
 
   switch (base.rol) {
-    case 'Admin':
+    case 'Distributor':
       return {
         ...base,
-        rol: 'Admin',
-      } as Admin;
+        rol: 'Distributor',
+      } as Distributor;
 
     case 'Client':
       return {

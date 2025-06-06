@@ -48,7 +48,6 @@ const NavbarClient = () => {
     if (profileMenuOpen) setProfileMenuOpen(false)
   }
 
-  // Cerrar menús al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node) && profileMenuOpen) {

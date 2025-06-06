@@ -674,6 +674,9 @@ BEGIN
     END CATCH
 END;
 GO
+
+
+
 CREATE OR ALTER PROCEDURE GetUserInfo
     @Email VARCHAR(100),
     @Password VARCHAR(255)
@@ -694,20 +697,19 @@ AS BEGIN
     -- Si no se encontró el usuario
     IF @UserId IS NULL
     BEGIN
-        SELECT 'Credenciales inválidas' AS ErrorMessage;
+        SELECT 'Credenciales inválidas' AS Message;
         RETURN;
     END
-    IF @RoleName = 'Cliente'
+    IF @RoleName = 'Client'
     BEGIN
         SELECT 
             U.UserId,
             U.Name,
             U.Email,
             U.RoleName,
-            C.ClienteID,
-            'Login correcto' AS Message
+            C.ClientID
         FROM USERS U
-        INNER JOIN CLIENTES C ON C.UserId = U.UserId
+        INNER JOIN CLIENTS C ON C.UserId = U.UserId
         WHERE U.UserId = @UserId;
         RETURN;
     END
@@ -720,23 +722,23 @@ AS BEGIN
             U.Name,
             U.Email,
             U.RoleName,
-            D.DeliveryID,
-            'Login correcto' AS Message
+            D.DeliveryID
         FROM USERS U
         INNER JOIN DELIVERY_PERSONS D ON D.UserId = U.UserId
         WHERE U.UserId = @UserId;
         RETURN;
     END
-
-    -- Si es otro rol, solo mostrar datos básicos
-    SELECT 
-        UserId,
-        Name,
-        Email,
-        RoleName,
-        'Login correcto' AS Message
-    FROM USERS
-    WHERE UserId = @UserId;
+    IF @RoleName = 'Distributor'
+    BEGIN
+        SELECT 
+            U.UserId,
+            U.Name,
+            U.Email,
+            U.RoleName
+        FROM USERS U
+        WHERE U.UserId = @UserId;
+        RETURN;
+    END
 END;
 
 
