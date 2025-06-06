@@ -58,8 +58,8 @@ app.post("/login", async (req, res) => {
     const result = await request.execute("GetUserInfo");
     const user = result.recordset[0];
 
-    if (!user || user.ErrorMessage) {
-      return res.status(401).json(user?.ErrorMessage || {Message: "Credenciales inválidas"});
+    if (!user || user.Message) {
+      return res.status(401).json({Message:user?.Message} || {Message: "Credenciales inválidas"});
     }
 
     const token = jwt.sign(

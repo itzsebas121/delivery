@@ -7,10 +7,12 @@ import {jwtDecode} from "jwt-decode"
 import { loginService } from "../../Services/LoginService"
 import { useAuth } from "../../context/Authcontext"
 import { useNavigate } from "react-router-dom"
+import { useAlert } from "../../components/Alerts/Alert-system"
 import "./Login.css"
 
 export default function Login() {
   const navigate = useNavigate()
+  const {showError} = useAlert()
   const { login } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
@@ -62,9 +64,9 @@ export default function Login() {
 
     setIsLoading(true)
     try {
-      const { token } = await loginService({ email: formData.email, password: formData.password })
+       const token  = await loginService({ email: formData.email, password: formData.password })
       if (token.Message) {
-        alert(token.Message || 'Error al iniciar sesión');
+        showError("Acceso denegado",token.Message || 'Error al iniciar sesión');
         return;
       }
       const decodedToken: any = jwtDecode(token);
@@ -78,7 +80,6 @@ export default function Login() {
       } else {
         alert("Rol no reconocido")
       }
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simular delay
     } catch (error) {
       console.error("Error en login:", error)
     } finally {
@@ -98,10 +99,6 @@ export default function Login() {
         </div>
         <h2 className="auth-title">¡Bienvenido de nuevo!</h2>
         <p className="auth-subtitle">Inicia sesión para continuar</p>
-
-        <div className="auth-divider">
-          <span>o continúa con email</span>
-        </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
