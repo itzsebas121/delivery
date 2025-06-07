@@ -27,6 +27,8 @@ CREATE TABLE PRODUCT (
     CategoryId INT,
     FOREIGN KEY (CategoryId) REFERENCES CATEGORIES(CategoryId)
 );
+ALTER TABLE PRODUCTS
+ADD isAvailable BIT NOT NULL DEFAULT 1;
 
 -- Descuentos
 CREATE TABLE DISCOUNTS (
@@ -96,6 +98,8 @@ CREATE TABLE CartItems (
     FOREIGN KEY (CartId) REFERENCES Carts(CartId),   -- Relación con Carts
     FOREIGN KEY (ProductId) REFERENCES PRODUCTS(ProductId)  -- Relación con PRODUCTS
 );
+
+
 ALTER TABLE ORDERS ADD IsRouteStarted BIT DEFAULT 0;
 ALTER TABLE ORDERS
 ADD 
@@ -104,6 +108,86 @@ ADD
   StartRouteLongitude DECIMAL(9,6) NULL,
   DeliveryLatitude DECIMAL(9,6) NULL,
   DeliveryLongitude DECIMAL(9,6) NULL;
+
+
+CREATE or alter PROCEDURE UpdateProduct
+    @ProductId INT,
+    @Name VARCHAR(100),
+    @Description VARCHAR(200),
+    @Price DECIMAL(10,2),
+    @Stock INT,
+    @ImageURL VARCHAR(255),
+    @CategoryId INT
+AS
+BEGIN
+    UPDATE PRODUCTS
+    SET
+        Name = @Name,
+        Description = @Description,
+        Price = @Price,
+        Stock = @Stock,
+        ImageURL = @ImageURL,
+        CategoryId = @CategoryId
+    WHERE ProductId = @ProductId;
+END;
+
+
+CREATE or alter PROCEDURE DeleteProduct
+    @ProductId INT
+AS
+BEGIN
+    BEGIN TRY
+        DELETE FROM PRODUCTS
+        WHERE ProductId = @ProductId;
+
+        PRINT 'Producto eliminado correctamente.';
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorMessage NVARCHAR(4000);
+        SET @ErrorMessage = ERROR_MESSAGE();
+
+        IF ERROR_NUMBER() = 547 -- Violación de FK
+        BEGIN
+            PRINT 'No se puede eliminar el producto porque está relacionado con otras tablas.';
+        END
+        ELSE
+        BEGIN
+            PRINT 'Error al intentar eliminar el producto: ' + @ErrorMessage;
+        END
+    END CATCH;
+END;
+CREATE PROCEDURE EnableProduct
+  @ProductId INT
+AS
+BEGIN
+  UPDATE PRODUCTS
+  SET isAvailable = 1
+  WHERE ProductId = @ProductId;
+
+  IF @@ROWCOUNT = 0
+    THROW 50001, 'Producto no encontrado.', 1;
+END;
+GO
+
+CREATE PROCEDURE DisableProduct
+  @ProductId INT
+AS
+BEGIN
+  UPDATE PRODUCTS
+  SET isAvailable = 0
+  WHERE ProductId = @ProductId;
+
+  IF @@ROWCOUNT = 0
+    THROW 50001, 'Producto no encontrado.', 1;
+END;
+GO
+
+
+
+
+
+
+
 
 CREATE OR ALTER PROCEDURE StartDeliveryRoute
   @OrderId INT,
@@ -136,9 +220,7 @@ END;
 
 CREATE OR ALTER PROCEDURE GetPendingOrdersForDelivery
   @DeliveryId INT
-AS
-BEGIN
-  SET NOCOUNT ON;
+AS BEGIN SET NOCOUNT ON;
 
   SELECT
     O.OrderId,
@@ -274,7 +356,6 @@ BEGIN
   BEGIN TRY
     BEGIN TRANSACTION;
 
-    -- Obtener cliente desde carrito activo
     SELECT @ClientId = ClientId 
     FROM Carts 
     WHERE CartId = @CartId AND IsActive = 1;
@@ -284,7 +365,6 @@ BEGIN
       THROW 50000, 'Carrito no encontrado o ya fue comprado', 1;
     END
 
-    -- Insertar orden inicial con datos de entrega
     INSERT INTO ORDERS (
       ClientId, 
       DeliveryAddress, 
@@ -1031,7 +1111,7 @@ BEGIN
 END;
 
 
-CREATE VIEW ProductWithCategory AS
+CREATE  VIEW ProductWithCategory AS
 SELECT 
     p.ProductId,
     p.Name AS ProductName,
@@ -1039,6 +1119,7 @@ SELECT
     p.Price,
     p.Stock,
     p.ImageURL,
+    p.isAvailable,
     c.CategoryName
 FROM 
     PRODUCTS p

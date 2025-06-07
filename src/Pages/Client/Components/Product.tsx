@@ -1,22 +1,34 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
+import React from "react"
+
 import { Search, Filter, ChevronLeft, ChevronRight, Grid, List, Package } from "lucide-react"
 import { baseURLRest } from "../../../config"
 import ProductCard from "../../../components/ProductCard"
 import "./Product.css"
 import { useAuth } from "../../../context/Authcontext"
 
+interface ProductsResponse {
+  total: number
+  products: any[]
+}
+
 const Product = () => {
   const { user, loading } = useAuth()
-  const clienteId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 0;
+  const clienteId = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 0
 
   const [products, setProducts] = useState<any[]>([])
   const [loadingp, setLoadingp] = useState<boolean>(false)
+
+  // Paginación mejorada
   const [page, setPage] = useState<number>(1)
   const [limit] = useState<number>(12)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+
   const [nameFilter, setNameFilter] = useState<string>("")
   const [categoryFilter, setCategoryFilter] = useState<string>("")
-  const [addedProductId, setAddedProductId] = useState<(number) | null>(null)
+  const [addedProductId, setAddedProductId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const gridRef = useRef<HTMLDivElement>(null)
 
@@ -27,21 +39,20 @@ const Product = () => {
     const fetchProducts = async () => {
       setLoadingp(true)
       try {
-        // Simular delay mínimo para mostrar skeleton
-        const [response] = await Promise.all([
-          fetch(
-            `${baseURLRest}/products?${new URLSearchParams({
-              page: page.toString(),
-              limit: limit.toString(),
-              name: nameFilter,
-              category: categoryFilter,
-            }).toString()}`,
-          ),
-          new Promise((resolve) => setTimeout(resolve, 300)),
-        ])
+        const response = await fetch(
+          `${baseURLRest}/products?${new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            name: nameFilter,
+            category: categoryFilter,
+            role: "client",
+          }).toString()}`,
+        )
 
-        const data = await response.json()
-        setProducts(data)
+        const data: ProductsResponse = await response.json()
+        setProducts(data.products)
+        setTotalProducts(data.total)
+        setTotalPages(Math.ceil(data.total / limit))
       } catch (error) {
         console.error("Error al obtener productos:", error)
       } finally {
@@ -60,6 +71,7 @@ const Product = () => {
       return () => clearTimeout(timer)
     }
   }, [addedProductId])
+
   if (loading) {
     return <div className="loading-spinner">Cargando...</div>
   }
@@ -88,6 +100,53 @@ const Product = () => {
     }
   }
 
+  // Función para generar los números de página a mostrar
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      // Si hay pocas páginas, mostrar todas
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Lógica para mostrar páginas con puntos suspensivos
+      if (page <= 3) {
+        // Mostrar primeras páginas
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      } else if (page >= totalPages - 2) {
+        // Mostrar últimas páginas
+        pages.push(1)
+        pages.push("...")
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        // Mostrar páginas del medio
+        pages.push(1)
+        pages.push("...")
+        for (let i = page - 1; i <= page + 1; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+      setPage(newPage)
+    }
+  }
+
   const SkeletonCard = () => (
     <div className="product-card-compact skeleton">
       <div className="product-image-container">
@@ -111,7 +170,7 @@ const Product = () => {
       <div ref={gridRef} className="product-header-compact">
         <div className="product-title-section">
           <h1 className="product-title-compact">Productos</h1>
-          <span className="product-count">{products.length} productos</span>
+          <span className="product-count">{totalProducts} productos en total</span>
         </div>
 
         <div className="product-controls">
@@ -155,7 +214,7 @@ const Product = () => {
       </div>
 
       {/* Grid de productos */}
-      <div  className={`product-grid-compact ${viewMode}`} id="product-grid-compact">
+      <div className={`product-grid-compact ${viewMode}`} id="product-grid-compact">
         {loadingp ? (
           Array.from({ length: 8 }).map((_, index) => <SkeletonCard key={index} />)
         ) : products.length > 0 ? (
@@ -184,18 +243,46 @@ const Product = () => {
         )}
       </div>
 
-      {/* Paginación compacta */}
-      {!loading && products.length > 0 && (
+      {/* Paginación mejorada */}
+      {!loadingp && totalPages > 1 && (
         <div className="paginationp-compact">
-          <button className="paginationp-btn" onClick={() => setPage(page - 1)} disabled={page === 1}>
-            <ChevronLeft size={16} />
-          </button>
+          <div className="paginationp-controls">
+            {/* Botón anterior */}
+            <button
+              className="paginationp-btn nav-btn"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+            >
+              <ChevronLeft size={16} />
+            </button>
 
-          <span className="paginationp-info">{page}</span>
+            {/* Números de página */}
+            <div className="paginationp-numbers">
+              {getPageNumbers().map((pageNum, index) => (
+                <React.Fragment key={index}>
+                  {pageNum === "..." ? (
+                    <span className="paginationp-ellipsis">...</span>
+                  ) : (
+                    <button
+                      className={`paginationp-number ${page === pageNum ? "active" : ""}`}
+                      onClick={() => handlePageChange(pageNum as number)}
+                    >
+                      {pageNum}
+                    </button>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
 
-          <button className="paginationp-btn" onClick={() => setPage(page + 1)} disabled={products.length < limit}>
-            <ChevronRight size={16} />
-          </button>
+            {/* Botón siguiente */}
+            <button
+              className="paginationp-btn nav-btn"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       )}
     </div>

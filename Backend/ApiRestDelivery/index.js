@@ -48,28 +48,62 @@ app.use((req, res, next) => {
   }
   next();
 });
+// Endpoint para registrar un nuevo cliente
+app.post("/register-client", async (req, res) => {
+  try {
+    const { Name, Email, Password, DefaultAddress, Phone } = req.body;
 
-// Endpoint para obtener productos con paginación y filtros (solo nombre y categoría)
+    const request = pool.request()
+      .input("Name", sql.VarChar(100), Name)
+      .input("Email", sql.VarChar(100), Email)
+      .input("Password", sql.VarChar(255), Password)
+      .input("DefaultAddress", sql.VarChar(255), DefaultAddress)
+      .input("Phone", sql.VarChar(20), Phone);
+
+    const result = await request.execute("RegisterClient");
+
+    res.status(201).json({
+      message: "Cliente registrado exitosamente",
+      ClientId: result.recordset[0]?.ClientId || null
+    });
+  } catch (err) {
+    console.error("Error al registrar cliente:", err);
+    res.status(400).json({ Error: err.message });
+  }
+});
+
+// Endpoint para obtener productos con paginación y filtros
 app.get("/products", async (req, res) => {
   try {
     const pageNum = parseInt(req.query.page?.toString()) || 1;
     const limitNum = parseInt(req.query.limit?.toString()) || 10;
     const name = req.query.name?.toString() || "";
     const category = req.query.category?.toString() || "";
+    const role = req.query.role?.toString() || "client"; 
 
     const offset = (pageNum - 1) * limitNum;
 
-    let query = `
-      SELECT *
+    // Base WHERE
+    let whereClause = `WHERE 1=1`;
+    if (role === "client") whereClause += ` AND isAvailable = 1`;
+    if (name) whereClause += ` AND ProductName LIKE @Name`;
+    if (category) whereClause += ` AND CategoryName LIKE @Category`;
+
+    // Query total count
+    const countQuery = `
+      SELECT COUNT(*) AS Total
       FROM ProductWithCategory
-      WHERE 1=1
+      ${whereClause}
     `;
 
-    if (name) query += ` AND ProductName LIKE @Name`;
-    if (category) query += ` AND CategoryName LIKE @Category`;
-
-    query += ` ORDER BY ProductId
-               OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY`;
+    // Query paginado
+    const dataQuery = `
+      SELECT *
+      FROM ProductWithCategory
+      ${whereClause}
+      ORDER BY ProductId
+      OFFSET @Offset ROWS FETCH NEXT @Limit ROWS ONLY
+    `;
 
     const request = pool.request()
       .input("Name", sql.VarChar, `%${name}%`)
@@ -77,8 +111,13 @@ app.get("/products", async (req, res) => {
       .input("Offset", sql.Int, offset)
       .input("Limit", sql.Int, limitNum);
 
-    const result = await request.query(query);
-    res.json(result.recordset);
+    const countResult = await request.query(countQuery);
+    const total = countResult.recordset[0].Total;
+
+    const dataResult = await request.query(dataQuery);
+    const products = dataResult.recordset;
+
+    res.json({ total, products });
   } catch (err) {
     console.error("Error al obtener productos:", err);
     res.status(500).json({ message: "Error interno del servidor" });
@@ -104,6 +143,96 @@ app.post("/create-products", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+// Endpoint para actualizar un producto existente
+app.put("/products", async (req, res) => {
+  try {
+    const {
+      ProductId,
+      Name,
+      Description,
+      Price,
+      Stock,
+      ImageURL,
+      CategoryId,
+    } = req.body;
+    const request = pool.request()
+      .input("ProductId", sql.Int, ProductId)
+      .input("Name", sql.VarChar(100), Name)
+      .input("Description", sql.VarChar(200), Description)
+      .input("Price", sql.Decimal(10, 2), Price)
+      .input("Stock", sql.Int, Stock)
+      .input("ImageURL", sql.VarChar(255), ImageURL)
+      .input("CategoryId", sql.Int, CategoryId);
+      
+    await request.execute("UpdateProduct");
+    res.status(200).json({ message: "Producto actualizado correctamente" });
+
+  } catch (err) {
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+// Endpoint para eliminar un producto
+app.delete("/products/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const request = pool.request()
+      .input("ProductId", sql.Int, id);
+
+    const response= await request.execute("DeleteProduct");
+
+    res.status(200).json(response.recordset[0]);
+  } catch (err) {
+    console.error("Error al eliminar producto:", err);
+
+    if (err.message.includes("conflicted with the REFERENCE constraint")) {
+      res.status(409).json({ message: "No se puede eliminar el producto porque está relacionado con otras tablas." });
+    } else {
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+});
+
+// Habilitar producto
+app.put("/products/:id/enable", async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+
+    await pool.request()
+      .input("ProductId", sql.Int, productId)
+      .execute("EnableProduct");
+
+    res.status(200).json({ message: "Producto habilitado correctamente" });
+  } catch (err) {
+    console.error("Error al habilitar producto:", err);
+    if (err.number === 50001) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+// Deshabilitar producto
+app.put("/products/:id/disable", async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id);
+
+    await pool.request()
+      .input("ProductId", sql.Int, productId)
+      .execute("DisableProduct");
+
+    res.status(200).json({ message: "Producto deshabilitado correctamente" });
+  } catch (err) {
+    console.error("Error al deshabilitar producto:", err);
+    if (err.number === 50001) {
+      return res.status(404).json({ message: "Producto no encontrado." });
+    }
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+
+
 
 // Endpoint para crear una orden a partir de un carrito
 app.post("/create-order-from-cart", async (req, res) => {

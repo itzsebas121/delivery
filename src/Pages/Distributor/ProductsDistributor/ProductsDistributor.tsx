@@ -1,9 +1,25 @@
 "use client"
 
-import type React from "react"
-
+import React from "react"
+import type { ReactElement } from "react"
 import { useState, useEffect, useCallback } from "react"
-import { Search, Filter, Plus, Eye, Edit, Trash2, Package, ChevronLeft, ChevronRight, X, Save } from "lucide-react"
+import {
+  Search,
+  Filter,
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Save,
+  Power,
+  PowerOff,
+  CheckCircle,
+  XCircle,
+} from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 import "./Products.css"
 import { baseURLRest } from "../../../config"
@@ -17,6 +33,7 @@ interface Product {
   ImageURL: string
   CategoryId?: number
   CategoryName?: string
+  isAvailable?: boolean
 }
 
 interface Category {
@@ -24,7 +41,12 @@ interface Category {
   CategoryName: string
 }
 
-// Componente de imagen con lazy loading y placeholder
+interface ProductsResponse {
+  total: number
+  products: Product[]
+}
+
+// Componente de imagen con lazy loading y placeholder mejorado
 const LazyImage = ({
   src,
   alt,
@@ -57,7 +79,6 @@ const LazyImage = ({
             setImageSrc(placeholder || "/placeholder.svg?height=40&width=40")
           }
 
-          // Solo cargar si la imagen está en el viewport
           const observer = new IntersectionObserver(
             (entries) => {
               entries.forEach((entry) => {
@@ -77,9 +98,15 @@ const LazyImage = ({
     [src, imageRef, placeholder],
   )
 
-  // Generar placeholder dinámico basado en el nombre
   const generatePlaceholder = () => {
-    const colors = ["#ff6b35", "#e74c3c", "#f39c12", "#27ae60", "#3498db", "#9b59b6"]
+    const colors = [
+      "var(--primary-orange)",
+      "var(--primary-red)",
+      "var(--primary-yellow)",
+      "var(--accent-green)",
+      "var(--info)",
+      "var(--primary-brown)",
+    ]
     const color = colors[alt.length % colors.length]
     const initials = alt
       .split(" ")
@@ -109,7 +136,7 @@ const LazyImage = ({
   )
 }
 
-// Skeleton loader para la tabla
+// Skeleton loader mejorado
 const TableSkeleton = () => (
   <div className="table-skeleton">
     {Array.from({ length: 5 }).map((_, index) => (
@@ -123,7 +150,9 @@ const TableSkeleton = () => (
         <div className="skeleton-cell skeleton-category"></div>
         <div className="skeleton-cell skeleton-price"></div>
         <div className="skeleton-cell skeleton-stock"></div>
+        <div className="skeleton-cell skeleton-status"></div>
         <div className="skeleton-cell skeleton-actions">
+          <div className="skeleton-button"></div>
           <div className="skeleton-button"></div>
           <div className="skeleton-button"></div>
           <div className="skeleton-button"></div>
@@ -133,14 +162,17 @@ const TableSkeleton = () => (
   </div>
 )
 
-const ProductsDistributor = () => {
+const ProductsDistributor = (): ReactElement => {
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  // Paginación
+  // Paginación mejorada
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
 
   // Filtros
   const [nameFilter, setNameFilter] = useState("")
@@ -174,13 +206,16 @@ const ProductsDistributor = () => {
         limit: limit.toString(),
         name: nameFilter,
         category: categoryFilter,
+        role: "distributor",
       })
 
       const response = await fetch(`${baseURLRest}/products?${params}`)
       if (!response.ok) throw new Error("Error al cargar productos")
 
-      const data = await response.json()
-      setProducts(data)
+      const data: ProductsResponse = await response.json()
+      setProducts(data.products)
+      setTotalProducts(data.total)
+      setTotalPages(Math.ceil(data.total / limit))
     } catch (err) {
       showError("Error", "No se pudieron cargar los productos")
       console.error(err)
@@ -200,7 +235,60 @@ const ProductsDistributor = () => {
     }
   }
 
+  // Función para habilitar producto
+  const handleEnableProduct = async (product: Product) => {
+    if (!product.ProductId) return
+
+    setActionLoading(product.ProductId)
+    try {
+      const response = await fetch(`${baseURLRest}/products/${product.ProductId}/enable`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (!response.ok) throw new Error("Error al habilitar producto")
+
+      const data = await response.json()
+      showSuccess("Producto habilitado", data.message || "El producto se ha habilitado correctamente")
+      fetchProducts()
+    } catch (err: any) {
+      showError("Error", err.message || "No se pudo habilitar el producto")
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  // Función para deshabilitar producto
+  const handleDisableProduct = (product: Product) => {
+    showConfirm(
+      "Deshabilitar producto",
+      `¿Estás seguro de que deseas deshabilitar "${product.ProductName}"?`,
+      async () => {
+        if (!product.ProductId) return
+
+        setActionLoading(product.ProductId)
+        try {
+          const response = await fetch(`${baseURLRest}/products/${product.ProductId}/disable`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+          })
+
+          if (!response.ok) throw new Error("Error al deshabilitar producto")
+
+          const data = await response.json()
+          showSuccess("Producto deshabilitado", data.message || "El producto se ha deshabilitado correctamente")
+          fetchProducts()
+        } catch (err: any) {
+          showError("Error", err.message || "No se pudo deshabilitar el producto")
+        } finally {
+          setActionLoading(null)
+        }
+      },
+    )
+  }
+
   const handleCreateProduct = async () => {
+    if (!validateForm()) return
     try {
       const response = await fetch(`${baseURLRest}/create-products`, {
         method: "POST",
@@ -225,14 +313,38 @@ const ProductsDistributor = () => {
     }
   }
 
+  const validateForm = () => {
+    if (
+      !formData.ProductName ||
+      !formData.Description ||
+      !formData.Price ||
+      !formData.Stock ||
+      !formData.ImageURL ||
+      !formData.CategoryId
+    ) {
+      showError("Error", "Por favor, complete todos los campos")
+      return false
+    }
+    if (formData.Price <= 0) {
+      showError("Error", "El precio debe ser mayor que cero")
+      return false
+    }
+    if (formData.Stock <= 0) {
+      showError("Error", "El stock debe ser mayor que cero")
+      return false
+    }
+    return true
+  }
+
   const handleUpdateProduct = async () => {
     if (!selectedProduct?.ProductId) return
-
+    if (!validateForm()) return
     try {
-      const response = await fetch(`${baseURLRest}/products/${selectedProduct.ProductId}`, {
+      const response = await fetch(`${baseURLRest}/products`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ProductId: selectedProduct.ProductId,
           Name: formData.ProductName,
           Description: formData.Description,
           Price: formData.Price,
@@ -259,12 +371,15 @@ const ProductsDistributor = () => {
           method: "DELETE",
         })
 
-        if (!response.ok) throw new Error("Error al eliminar producto")
-
-        showSuccess("Producto eliminado", "El producto se ha eliminado exitosamente")
+        const data = await response.json()
+        if (data.ERROR) {
+          showError("Error al eliminar", data.ERROR)
+          return
+        }
+        showSuccess("Producto eliminado", data.message || "El producto se ha eliminado exitosamente")
         fetchProducts()
-      } catch (err) {
-        showError("Error", "No se pudo eliminar el producto")
+      } catch (err: any) {
+        showError("Error", err.message || "No se pudo eliminar el producto")
       }
     })
   }
@@ -316,178 +431,310 @@ const ProductsDistributor = () => {
     return category?.CategoryName || "Sin categoría"
   }
 
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      if (page <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      } else if (page >= totalPages - 2) {
+        pages.push(1)
+        pages.push("...")
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        pages.push(1)
+        pages.push("...")
+        for (let i = page - 1; i <= page + 1; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+      setPage(newPage)
+    }
+  }
+
   return (
     <div className="products-admin">
-      {/* Header compacto */}
+      {/* Header mejorado */}
       <div className="admin-header">
         <div className="header-content">
           <div className="header-info">
-            <h1>
-              <Package size={24} /> Gestión de Productos
-            </h1>
-            <span className="product-count">{products.length} productos</span>
+            <div className="header-title">
+              <Package size={28} className="header-icon" />
+              <div>
+                <h1>Gestión de Productos</h1>
+                <span className="product-count">{totalProducts} productos en total</span>
+              </div>
+            </div>
           </div>
           <button className="btn-primary" onClick={() => openModal("create")}>
-            <Plus size={18} />
-            Nuevo Producto
+            <Plus size={20} />
+            <span>Nuevo Producto</span>
           </button>
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros mejorados */}
       <div className="filters-section">
-        <div className="search-filter">
-          <Search size={18} />
-          <input
-            type="text"
-            placeholder="Buscar por nombre, descripción..."
-            value={nameFilter}
-            onChange={(e) => {
-              setNameFilter(e.target.value)
-              setPage(1)
-            }}
-          />
-        </div>
+        <div className="filters-container">
+          <div className="search-filter">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, descripción..."
+              value={nameFilter}
+              onChange={(e) => {
+                setNameFilter(e.target.value)
+                setPage(1)
+              }}
+            />
+          </div>
 
-        <div className="category-filter">
-          <Filter size={18} />
-          <select
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value)
-              setPage(1)
-            }}
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category.CategoryId} value={category.CategoryName}>
-                {category.CategoryName}
-              </option>
-            ))}
-          </select>
-        </div>
+          <div className="category-filter">
+            <Filter size={18} />
+            <select
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value)
+                setPage(1)
+              }}
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((category) => (
+                <option key={category.CategoryId} value={category.CategoryName}>
+                  {category.CategoryName}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {(nameFilter || categoryFilter) && (
-          <button
-            className="btn-clear"
-            onClick={() => {
-              setNameFilter("")
-              setCategoryFilter("")
-              setPage(1)
-            }}
-          >
-            Limpiar filtros
-          </button>
-        )}
+          {(nameFilter || categoryFilter) && (
+            <button
+              className="btn-clear"
+              onClick={() => {
+                setNameFilter("")
+                setCategoryFilter("")
+                setPage(1)
+              }}
+            >
+              <X size={16} />
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tabla de productos */}
+      {/* Tabla mejorada */}
       <div className="table-section">
         {loading ? (
           <TableSkeleton />
         ) : (
-          <table className="products-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Producto</th>
-                <th>Descripción</th>
-                <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.ProductId}>
-                  <td>#{product.ProductId}</td>
-                  <td>
-                    <div className="product-info">
-                      <LazyImage
-                        src={product.ImageURL}
-                        alt={product.ProductName}
-                        className="product-thumb"
-                        placeholder="/placeholder.svg?height=40&width=40"
-                      />
-                      <span className="product-name">{product.ProductName}</span>
-                    </div>
-                  </td>
-                  <td className="description-cell">{product.Description}</td>
-                  <td>
-                    <span className="category-badge">{getCategoryName(product.CategoryId)}</span>
-                  </td>
-                  <td className="price-cell">${product.Price.toFixed(2)}</td>
-                  <td className={`stock-cell ${product.Stock < 10 ? "low-stock" : ""}`}>{product.Stock}</td>
-                  <td>
-                    <div className="actions-cell">
-                      <button
-                        className="btn-action btn-view"
-                        onClick={() => openModal("view", product)}
-                        title="Ver detalles"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button className="btn-action btn-edit" onClick={() => openModal("edit", product)} title="Editar">
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        className="btn-action btn-delete"
-                        onClick={() => handleDeleteProduct(product)}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-container">
+            <table className="products-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Producto</th>
+                  <th className="hide-mobile">Descripción</th>
+                  <th>Categoría</th>
+                  <th>Precio</th>
+                  <th className="hide-mobile">Stock</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.ProductId} className={!product.isAvailable ? "product-disabled" : ""}>
+                    <td>
+                      <span className="product-id">#{product.ProductId}</span>
+                    </td>
+                    <td>
+                      <div className="product-info">
+                        <LazyImage
+                          src={product.ImageURL}
+                          alt={product.ProductName}
+                          className="product-thumb"
+                          placeholder="/placeholder.svg?height=40&width=40"
+                        />
+                        <div className="product-details">
+                          <span className="product-name">{product.ProductName}</span>
+                          <span className="product-mobile-info hide-desktop">
+                            ${product.Price.toFixed(2)} • Stock: {product.Stock}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="description-cell hide-mobile">{product.Description}</td>
+                    <td>
+                      <span className="category-badge">{getCategoryName(product.CategoryId)}</span>
+                    </td>
+                    <td className="price-cell hide-mobile">${product.Price.toFixed(2)}</td>
+                    <td className={`stock-cell hide-mobile ${product.Stock < 10 ? "low-stock" : ""}`}>
+                      {product.Stock}
+                    </td>
+                    <td>
+                      <div className="status-cell">
+                        {product.isAvailable ? (
+                          <span className="status-badge status-active">
+                            <CheckCircle size={14} />
+                            Activo
+                          </span>
+                        ) : (
+                          <span className="status-badge status-inactive">
+                            <XCircle size={14} />
+                            Inactivo
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="actions-cell">
+                        <button
+                          className="btn-action btn-view"
+                          onClick={() => openModal("view", product)}
+                          title="Ver detalles"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button
+                          className="btn-action btn-edit"
+                          onClick={() => openModal("edit", product)}
+                          title="Editar"
+                        >
+                          <Edit size={16} />
+                        </button>
+
+                        {product.isAvailable ? (
+                          <button
+                            className="btn-action btn-disable"
+                            onClick={() => handleDisableProduct(product)}
+                            title="Deshabilitar"
+                            disabled={actionLoading === product.ProductId}
+                          >
+                            {actionLoading === product.ProductId ? (
+                              <div className="loading-spinner-small"></div>
+                            ) : (
+                              <PowerOff size={16} />
+                            )}
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-action btn-enable"
+                            onClick={() => handleEnableProduct(product)}
+                            title="Habilitar"
+                            disabled={actionLoading === product.ProductId}
+                          >
+                            {actionLoading === product.ProductId ? (
+                              <div className="loading-spinner-small"></div>
+                            ) : (
+                              <Power size={16} />
+                            )}
+                          </button>
+                        )}
+
+                        <button
+                          className="btn-action btn-delete"
+                          onClick={() => handleDeleteProduct(product)}
+                          title="Eliminar"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {!loading && products.length === 0 && (
           <div className="empty-state">
-            <Package size={48} />
+            <Package size={64} />
             <h3>No hay productos</h3>
             <p>No se encontraron productos con los filtros seleccionados</p>
+            <button className="btn-primary" onClick={() => openModal("create")}>
+              <Plus size={18} />
+              Crear primer producto
+            </button>
           </div>
         )}
       </div>
 
-      {/* Paginación simple */}
-      {!loading && products.length > 0 && (
+      {/* Paginación mejorada */}
+      {!loading && totalPages > 1 && (
         <div className="pagination-section">
-          <button className="pagination-btn nav-btn" onClick={() => setPage(page - 1)} disabled={page === 1}>
-            <ChevronLeft size={18} />
-          </button>
+          <div className="pagination-controls">
+            <button
+              className="pagination-btn nav-btn"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+              title="Página anterior"
+            >
+              <ChevronLeft size={18} />
+            </button>
 
-          <div className="page-numbers">
-            <button className="page-btn active">{page}</button>
+            <div className="page-numbers">
+              {getPageNumbers().map((pageNum, index) => (
+                <React.Fragment key={index}>
+                  {pageNum === "..." ? (
+                    <span className="page-ellipsis">...</span>
+                  ) : (
+                    <button
+                      className={`page-btn ${page === pageNum ? "active" : ""}`}
+                      onClick={() => handlePageChange(pageNum as number)}
+                    >
+                      {pageNum}
+                    </button>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+
+            <button
+              className="pagination-btn nav-btn"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages}
+              title="Página siguiente"
+            >
+              <ChevronRight size={18} />
+            </button>
           </div>
-
-          <button
-            className="pagination-btn nav-btn"
-            onClick={() => setPage(page + 1)}
-            disabled={products.length < limit}
-          >
-            <ChevronRight size={18} />
-          </button>
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal mejorado */}
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
-                {modalMode === "create" && "Crear Producto"}
+                {modalMode === "create" && "Crear Nuevo Producto"}
                 {modalMode === "edit" && "Editar Producto"}
                 {modalMode === "view" && "Detalles del Producto"}
               </h2>
               <button className="modal-close" onClick={closeModal}>
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
@@ -501,6 +748,17 @@ const ProductsDistributor = () => {
                       className="detail-img"
                       placeholder="/placeholder.svg?height=200&width=300"
                     />
+                    {selectedProduct?.isAvailable ? (
+                      <div className="detail-status status-active">
+                        <CheckCircle size={16} />
+                        Producto Activo
+                      </div>
+                    ) : (
+                      <div className="detail-status status-inactive">
+                        <XCircle size={16} />
+                        Producto Inactivo
+                      </div>
+                    )}
                   </div>
                   <div className="detail-info">
                     <h3>{selectedProduct?.ProductName}</h3>
@@ -508,7 +766,7 @@ const ProductsDistributor = () => {
                     <div className="detail-grid">
                       <div className="detail-item">
                         <label>Categoría:</label>
-                        <span>{getCategoryName(selectedProduct?.CategoryId)}</span>
+                        <span className="category-badge">{getCategoryName(selectedProduct?.CategoryId)}</span>
                       </div>
                       <div className="detail-item">
                         <label>Precio:</label>
@@ -517,7 +775,7 @@ const ProductsDistributor = () => {
                       <div className="detail-item">
                         <label>Stock:</label>
                         <span className={selectedProduct && selectedProduct.Stock < 10 ? "low-stock" : ""}>
-                          {selectedProduct?.Stock}
+                          {selectedProduct?.Stock} unidades
                         </span>
                       </div>
                     </div>
@@ -527,7 +785,7 @@ const ProductsDistributor = () => {
                 <form className="product-form">
                   <div className="form-grid">
                     <div className="form-group">
-                      <label>Nombre del producto</label>
+                      <label>Nombre del producto *</label>
                       <input
                         type="text"
                         name="ProductName"
@@ -539,7 +797,7 @@ const ProductsDistributor = () => {
                     </div>
 
                     <div className="form-group">
-                      <label>Categoría</label>
+                      <label>Categoría *</label>
                       <select name="CategoryId" value={formData.CategoryId} onChange={handleInputChange} required>
                         <option value={0}>Seleccionar categoría...</option>
                         {categories.map((category) => (
@@ -551,7 +809,7 @@ const ProductsDistributor = () => {
                     </div>
 
                     <div className="form-group full-width">
-                      <label>Descripción</label>
+                      <label>Descripción *</label>
                       <textarea
                         name="Description"
                         value={formData.Description}
@@ -563,7 +821,7 @@ const ProductsDistributor = () => {
                     </div>
 
                     <div className="form-group">
-                      <label>Precio ($)</label>
+                      <label>Precio ($) *</label>
                       <input
                         type="number"
                         name="Price"
@@ -577,7 +835,7 @@ const ProductsDistributor = () => {
                     </div>
 
                     <div className="form-group">
-                      <label>Stock disponible</label>
+                      <label>Stock disponible *</label>
                       <input
                         type="number"
                         name="Stock"
@@ -590,13 +848,14 @@ const ProductsDistributor = () => {
                     </div>
 
                     <div className="form-group full-width">
-                      <label>URL de imagen</label>
+                      <label>URL de imagen *</label>
                       <input
                         type="url"
                         name="ImageURL"
                         value={formData.ImageURL}
                         onChange={handleInputChange}
                         placeholder="https://ejemplo.com/imagen-del-producto.jpg"
+                        required
                       />
                     </div>
                   </div>
@@ -618,7 +877,7 @@ const ProductsDistributor = () => {
                     className="btn-primary"
                     onClick={modalMode === "create" ? handleCreateProduct : handleUpdateProduct}
                   >
-                    <Save size={16} />
+                    <Save size={18} />
                     {modalMode === "create" ? "Crear Producto" : "Guardar Cambios"}
                   </button>
                 </>

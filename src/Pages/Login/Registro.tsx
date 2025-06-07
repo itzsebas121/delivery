@@ -1,23 +1,28 @@
 import type React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import { Mail, Lock, AlertCircle, User, CheckCircle, Loader2 } from "lucide-react"
+import { Mail, Lock, AlertCircle, User, CheckCircle, Loader2, Map, Phone } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import "./Login.css"
 import { useAlert } from "../../components/Alerts/Alert-system"
+import { baseURLRest } from "../../config"
 export default function Registro() {
-  const { showSuccess } = useAlert()
+  const { showSuccess, showError } = useAlert()
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     nombre: "",
     email: "",
+    address: "",
     password: "",
+    phone: "",
     confirmPassword: "",
   })
 
   const [errors, setErrors] = useState({
     nombre: "",
     email: "",
+    address: "",
+    phone: "",
     password: "",
     confirmPassword: "",
   })
@@ -37,15 +42,24 @@ export default function Registro() {
     const newErrors = {
       nombre: "",
       email: "",
+      address: "",
       password: "",
       confirmPassword: "",
+      phone: "",
     }
 
     if (!formData.nombre) {
       newErrors.nombre = "El nombre es requerido"
       valid = false
     }
-
+    if (!formData.address) {
+      newErrors.address = "La dirección es requerida"
+      valid = false
+    }
+    if (!formData.phone) {
+      newErrors.phone = "El teléfono es requerido"
+      valid = false
+    }
     if (!formData.email) {
       newErrors.email = "El email es requerido"
       valid = false
@@ -75,22 +89,42 @@ export default function Registro() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validateForm()) return
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Aquí iría tu llamada al registerService
-      // await registerService({ nombre, email, password })
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulación de delay
-      showSuccess("¡Éxito!", "Cuenta creada correctamente")
-      navigate("/login")
+      const response = await fetch(`${baseURLRest}/register-client`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          Name: formData.nombre,
+          Email: formData.email,
+          Password: formData.password,
+          DefaultAddress: formData.address,
+          Phone: formData.phone,
+        }),
+      });
+
+      
+      const data = await response.json();
+      if(data.Error){
+        showError("Error", data.Error);
+        return;
+      }
+      showSuccess("¡Exito!", data.message);
+
+      navigate("/login");
     } catch (error) {
-      console.error("Error en el registro:", error)
+      console.error("Error en el registro:", error);
+      showError("Error", "No se pudo registrar");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
+
 
   return (
     <div className="auth-container">
@@ -160,7 +194,61 @@ export default function Registro() {
               </span>
             )}
           </div>
-
+          {/* Direccion */}
+          <div className="form-group">
+            <label htmlFor="address">
+              <Map size={14} /> Dirección
+            </label>
+            <div className={`input-wrapper ${errors.email ? "input-error" : ""}`}>
+              <span className="input-icon">
+                <Map size={16} />
+              </span>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                placeholder="Ingresa tu dirección"
+                value={formData.address}
+                onChange={handleChange}
+                disabled={isLoading}
+              />
+            </div>
+            {errors.address && (
+              <span className="error-message">
+                <AlertCircle size={14} />
+                {errors.address}
+              </span>
+            )}
+          </div>
+            
+          {/* Phone */}
+          <div className="form-group">
+            <label htmlFor="phone">
+              <Phone size={14} /> Teléfono
+            </label>
+            <div className={`input-wrapper ${errors.phone ? "input-error" : ""}`}>
+              <span className="input-icon">
+                <Phone size={16} />
+              </span>
+              <input
+                type="number"
+                id="phone"
+                name="phone"
+                placeholder="Ingresa tu telefono"
+                maxLength={10}
+                value={formData.phone}
+                onChange={handleChange}
+                disabled={isLoading}
+              />
+            </div>
+            {errors.phone && (
+              <span className="error-message">
+                <AlertCircle size={14} />
+                {errors.phone}
+              </span>
+            )}
+          </div>
+            
           {/* Contraseña */}
           <div className="form-group">
             <label htmlFor="password">
