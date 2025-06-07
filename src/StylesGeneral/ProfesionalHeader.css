@@ -1,0 +1,147 @@
+.delivery-header {
+  background: var(--gradient-warm);
+  color: var(--white);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.header-title svg {
+  color: var(--white);
+}
+
+.header-title h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.header-title p {
+  font-size: var(--font-size-base);
+  opacity: 0.9;
+  margin: var(--spacing-xs) 0 0 0;
+}
+
+.header-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  padding: 5px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  min-width: 100px;
+}
+
+.stat-number {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+}
+.status-tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.3);
+}
+.status-tab:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.status-tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-xl) var(--spacing-xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.status-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  background: var(--white);
+  color: var(--medium-gray);
+  border: 2px solid transparent;
+  min-height: 48px;
+}
+
+.status-tab.info {
+  border-color: var(--info);
+}
+
+.status-tab.info.active {
+  background: var(--info);
+  color: var(--white);
+}
+
+.status-tab.success {
+  border-color: var(--success);
+}
+
+.status-tab.success.active {
+  background: var(--success);
+  color: var(--white);
+}
+
+.status-tab.danger {
+  border-color: var(--error);
+}
+
+.status-tab.danger.active {
+  background: var(--error);
+  color: var(--white);
+}
+.status-tab.warning {
+  border-color: #f59e0b;
+}
+
+.status-tab.warning.active {
+  background: #f59e0b;
+  color: var(--white);
+}
+
+@media (max-width: 768px) {
+  .header-stats {
+    display: none;
+  }
+  .header-content{
+    padding: 10px;
+  }
+}
+@media (max-width: 480px) {
+  .status-tabs{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .status-tab{
+    font-size: .8em;
+    padding: 2px 5px;
+
+  }
+}

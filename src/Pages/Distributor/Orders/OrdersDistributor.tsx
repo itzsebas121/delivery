@@ -1,10 +1,8 @@
-import type React from "react"
+"use client"
 import { useState, useEffect } from "react"
 import { baseURLRest } from "../../../config"
 import AssignDeliveryModal from "./AssignDeliveryModal"
 import OrderDetailsModal from "./order-details-modal"
-import { MoveLeftIcon, MoveRightIcon } from "lucide-react"
-import "./Orders.css"
 import {
   ShoppingBag,
   Truck,
@@ -14,16 +12,19 @@ import {
   MapPin,
   User,
   DollarSign,
-  Filter,
   Search,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
 } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
+import "./Orders.css"
 
 interface Order {
   OrderId: number
   OrderDate: string
-  Status: "Pending" | "En camino" | "Completed" | "Cancelada"
+  Status: "Pending" | "En camino" | "Completada" | "Cancelada"
   DeliveryAddress: string
   Total: number
   DiscountedTotal: number
@@ -34,87 +35,145 @@ interface Order {
   DiscountPercentage: number | null
 }
 
-type OrderStatus = "All" | "Pending" | "En camino" | "Completed" | "Cancelada"
+type OrderStatus = "Pending" | "En camino" | "Completada" | "Cancelada"
 
 export default function OrdersDistributor() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<OrderStatus>("Pending")
   const [showAssignModal, setShowAssignModal] = useState<boolean>(false)
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false)
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
-  const [statusFilter, setStatusFilter] = useState<OrderStatus>("All")
   const [searchQuery, setSearchQuery] = useState<string>("")
 
-  const { showSuccess, showError, showConfirm } = useAlert()
-
-  // Agregar estados para la paginación de cada sección
+  // Pagination states for each status
   const [pendingPage, setPendingPage] = useState<number>(1)
   const [inTransitPage, setInTransitPage] = useState<number>(1)
   const [completedPage, setCompletedPage] = useState<number>(1)
   const [canceledPage, setCanceledPage] = useState<number>(1)
+
   const ordersPerPage = 6
+  const { showSuccess, showError, showConfirm } = useAlert()
 
-  // Obtener todas las órdenes
   useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true)
-      try {
-        const response = await fetch(`${baseURLRest}/sales`)
-        if (!response.ok) {
-          throw new Error("Error al obtener las órdenes")
-        }
-        const data = await response.json()
-        setOrders(data)
-        setError(null)
-      } catch (err) {
-        setError("Error al cargar las órdenes. Por favor, intente nuevamente.")
-        showError("Error", "Error al cargar las órdenes. Por favor, intente nuevamente.")
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchOrders()
   }, [])
 
-  // Filtrar órdenes por estado seleccionado y búsqueda
-  const filteredOrders = orders
-    .filter((order) => statusFilter === "All" || order.Status === statusFilter)
-    .filter((order) => {
-      if (!searchQuery) return true
-      const query = searchQuery.toLowerCase()
-      return (
-        order.ClientName.toLowerCase().includes(query) ||
-        order.DeliveryAddress.toLowerCase().includes(query) ||
-        order.OrderId.toString().includes(query)
-      )
-    })
+  const fetchOrders = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch(`${baseURLRest}/sales`)
+      if (!response.ok) throw new Error("Error al obtener las órdenes")
 
-  // Filtrar órdenes por estado para las secciones
-  const pendingOrders = filteredOrders.filter((order) => order.Status === "Pending")
-  const inTransitOrders = filteredOrders.filter((order) => order.Status === "En camino")
-  const completedOrders = filteredOrders.filter((order) => order.Status === "Completed")
-  const canceledOrders = filteredOrders.filter((order) => order.Status === "Cancelada")
+      const data = await response.json()
+      setOrders(data)
+    } catch (err) {
+      showError("Error", "Error al cargar las órdenes. Por favor, intente nuevamente.")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // Manejar la cancelación de una orden
+  // Filter orders by status and search
+  const getFilteredOrders = (status: OrderStatus) => {
+    return orders
+      .filter((order) => order.Status === status)
+      .filter((order) => {
+        if (!searchQuery) return true
+        const query = searchQuery.toLowerCase()
+        return (
+          order.ClientName.toLowerCase().includes(query) ||
+          order.DeliveryAddress.toLowerCase().includes(query) ||
+          order.OrderId.toString().includes(query)
+        )
+      })
+  }
+
+  // Get paginated orders for current tab
+  const getPaginatedOrders = (status: OrderStatus) => {
+    const filteredOrders = getFilteredOrders(status)
+    const currentPage = getCurrentPage(status)
+    const startIndex = (currentPage - 1) * ordersPerPage
+    const endIndex = startIndex + ordersPerPage
+    return filteredOrders.slice(startIndex, endIndex)
+  }
+
+  // Get total pages for current tab
+  const getTotalPages = (status: OrderStatus) => {
+    const filteredOrders = getFilteredOrders(status)
+    return Math.ceil(filteredOrders.length / ordersPerPage)
+  }
+
+  // Get current page for status
+  const getCurrentPage = (status: OrderStatus) => {
+    switch (status) {
+      case "Pending":
+        return pendingPage
+      case "En camino":
+        return inTransitPage
+      case "Completada":
+        return completedPage
+      case "Cancelada":
+        return canceledPage
+      default:
+        return 1
+    }
+  }
+
+  // Set current page for status
+  const setCurrentPage = (status: OrderStatus, page: number) => {
+    switch (status) {
+      case "Pending":
+        setPendingPage(page)
+        break
+      case "En camino":
+        setInTransitPage(page)
+        break
+      case "Completada":
+        setCompletedPage(page)
+        break
+      case "Cancelada":
+        setCanceledPage(page)
+        break
+    }
+  }
+
+  // Get status configuration
+  const getStatusConfig = (status: OrderStatus) => {
+    switch (status) {
+      case "Pending":
+        return { icon: ShoppingBag, color: "warning", label: "Pendientes" }
+      case "En camino":
+        return { icon: Truck, color: "info", label: "En Camino" }
+      case "Completada":
+        return { icon: CheckCircle, color: "success", label: "Completadas" }
+      case "Cancelada":
+        return { icon: XCircle, color: "danger", label: "Canceladas" }
+    }
+  }
+
+  // Get order counts
+  const getOrderCounts = () => {
+    return {
+      Pending: getFilteredOrders("Pending").length,
+      "En camino": getFilteredOrders("En camino").length,
+      Completada: getFilteredOrders("Completada").length,
+      Cancelada: getFilteredOrders("Cancelada").length,
+    }
+  }
+
   const handleCancelOrder = async (orderId: number) => {
     showConfirm("Cancelar orden", "¿Está seguro que desea cancelar esta orden?", async () => {
       try {
         const response = await fetch(`${baseURLRest}/cancel-order/${orderId}`, {
           method: "PATCH",
         })
+        if (!response.ok) throw new Error("Error al cancelar la orden")
 
-        if (!response.ok) {
-          throw new Error("Error al cancelar la orden")
-        }
-
-        // Actualizar el estado local
         setOrders((prevOrders) =>
           prevOrders.map((order) => (order.OrderId === orderId ? { ...order, Status: "Cancelada" } : order)),
         )
-
         showSuccess("Orden cancelada", "La orden ha sido cancelada exitosamente")
       } catch (err) {
         console.error("Error al cancelar la orden:", err)
@@ -123,475 +182,287 @@ export default function OrdersDistributor() {
     })
   }
 
-  // Abrir modal para asignar repartidor
   const handleAssignDelivery = (orderId: number) => {
     setSelectedOrderId(orderId)
     setShowAssignModal(true)
   }
 
-  // Manejar la asignación del repartidor
   const handleDeliveryAssigned = () => {
     if (!selectedOrderId) return
-
-    // Actualizar el estado local
     setOrders((prevOrders) =>
       prevOrders.map((order) => (order.OrderId === selectedOrderId ? { ...order, Status: "En camino" } : order)),
     )
     setShowAssignModal(false)
   }
 
-  // Ver detalles de una orden
   const handleViewDetails = (orderId: number) => {
     setSelectedOrderId(orderId)
     setShowDetailsModal(true)
   }
 
-  // Manejar cambio de filtro
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value as OrderStatus)
-  }
-
-  // Formatear fecha
   const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = {
+    return new Date(dateString).toLocaleDateString("es-ES", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }
-    return new Date(dateString).toLocaleDateString("es-ES", options)
+    })
   }
 
-  // Renderizar una tarjeta de orden
-  const renderOrderCard = (order: Order) => {
-    // Determinar el icono según el estado
-    const getStatusIcon = () => {
-      switch (order.Status) {
-        case "Pending":
-          return <ShoppingBag size={18} />
-        case "En camino":
-          return <Truck size={18} />
-        case "Completed":
-          return <CheckCircle size={18} />
-        case "Cancelada":
-          return <XCircle size={18} />
-        default:
-          return <ShoppingBag size={18} />
-      }
-    }
-
-    return (
-      <div className="order-card" key={order.OrderId}>
-        <div className="order-card-header">
-          <h3>Orden #{order.OrderId}</h3>
-          <span className={`order-status order-status-${order.Status.toLowerCase().replace(" ", "-")}`}>
-            {getStatusIcon()} {order.Status}
-          </span>
-        </div>
-
-        <div className="order-card-body">
-          <div className="order-info">
-            <p>
-              <strong>
-                <User size={16} /> Cliente:
-              </strong>
-              <span>{order.ClientName}</span>
-            </p>
-            <p>
-              <strong>
-                <Calendar size={16} /> Fecha:
-              </strong>
-              <span>{formatDate(order.OrderDate)}</span>
-            </p>
-            <p>
-              <strong>
-                <MapPin size={16} /> Dirección:
-              </strong>
-              <span>{order.DeliveryAddress}</span>
-            </p>
-            <p>
-              <strong>
-                <DollarSign size={16} /> Total:
-              </strong>
-              <span>${order.DiscountedTotal.toFixed(2)}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="order-card-actions">
-          <button className="order-btn order-btn-details" onClick={() => handleViewDetails(order.OrderId)}>
-            Ver detalles
-          </button>
-          {order.Status === "En camino" && (
-
-            <button className="order-btn order-btn-cancel" onClick={() => handleCancelOrder(order.OrderId)}>
-              Cancelar orden
-            </button>
-          )}
-          {order.Status === "Pending" && (
-            <>
-              <button className="order-btn order-btn-assign" onClick={() => handleAssignDelivery(order.OrderId)}>
-                Asignar repartidor
-              </button>
-              <button className="order-btn order-btn-cancel" onClick={() => handleCancelOrder(order.OrderId)}>
-                Cancelar orden
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    )
+  const formatCurrency = (amount: number) => {
+    return `$${amount.toFixed(2)}`
   }
 
-  // Modificar las secciones de filtrado para incluir paginación
-  const paginateOrders = (orders: Order[], page: number) => {
-    const startIndex = (page - 1) * ordersPerPage
-    const endIndex = startIndex + ordersPerPage
-    return orders.slice(startIndex, endIndex)
-  }
-
-  // Modificar la función renderOrders para incluir paginación en cada sección
-  const renderOrders = () => {
-    if (statusFilter !== "All") {
-      const currentPage =
-        statusFilter === "Pending"
-          ? pendingPage
-          : statusFilter === "En camino"
-            ? inTransitPage
-            : statusFilter === "Completed"
-              ? completedPage
-              : canceledPage
-
-      const setPage =
-        statusFilter === "Pending"
-          ? setPendingPage
-          : statusFilter === "En camino"
-            ? setInTransitPage
-            : statusFilter === "Completed"
-              ? setCompletedPage
-              : setCanceledPage
-
-      const paginatedOrders = paginateOrders(filteredOrders, currentPage)
-      const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
-
-      return (
-        <div className="orders-section">
-          <h2 className="section-title">
-            {statusFilter === "Pending" && <ShoppingBag size={22} />}
-            {statusFilter === "En camino" && <Truck size={22} />}
-            {statusFilter === "Completed" && <CheckCircle size={22} />}
-            {statusFilter === "Cancelada" && <XCircle size={22} />}
-            Órdenes {statusFilter}
-          </h2>
-          <div className="orders-container">
-            {filteredOrders.length > 0 ? (
-              paginatedOrders.map((order) => renderOrderCard(order))
-            ) : (
-              <div className="empty-orders">
-                <p>No hay órdenes con el estado {statusFilter}</p>
-              </div>
-            )}
-          </div>
-
-          {filteredOrders.length > 0 && (
-            <div className="pagination-section">
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <MoveLeftIcon size={22} />
-              </button>
-              <div className="page-numbers">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    className={`page-btn ${pageNum === currentPage ? "active" : ""}`}
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
-              </div>
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <MoveRightIcon />
-              </button>
-            </div>
-          )}
-        </div>
-      )
-    }
-
-    // Si no hay filtro, mostrar todas las secciones con paginación
-    return (
-      <>
-        <div className="orders-section">
-          <h2 className="section-title">
-            <ShoppingBag size={22} /> Órdenes Pendientes
-          </h2>
-          <div className="orders-container">
-            {pendingOrders.length > 0 ? (
-              paginateOrders(pendingOrders, pendingPage).map((order) => renderOrderCard(order))
-            ) : (
-              <div className="empty-orders">
-                <p>No hay órdenes pendientes</p>
-              </div>
-            )}
-          </div>
-          {pendingOrders.length > 0 && (
-            <div className="pagination-section">
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setPendingPage(pendingPage - 1)}
-                disabled={pendingPage === 1}
-              >
-                <MoveLeftIcon size={22} />
-              </button>
-              <div className="page-numbers">
-                {Array.from({ length: Math.ceil(pendingOrders.length / ordersPerPage) }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`page-btn ${pageNum === pendingPage ? "active" : ""}`}
-                      onClick={() => setPendingPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ),
-                )}
-              </div>
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setPendingPage(pendingPage + 1)}
-                disabled={pendingPage === Math.ceil(pendingOrders.length / ordersPerPage)}
-              >
-                <MoveRightIcon />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="orders-section">
-          <h2 className="section-title">
-            <Truck size={22} /> Órdenes En Camino
-          </h2>
-          <div className="orders-container">
-            {inTransitOrders.length > 0 ? (
-              paginateOrders(inTransitOrders, inTransitPage).map((order) => renderOrderCard(order))
-            ) : (
-              <div className="empty-orders">
-                <p>No hay órdenes en camino</p>
-              </div>
-            )}
-          </div>
-          {inTransitOrders.length > 0 && (
-            <div className="pagination-section">
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setInTransitPage(inTransitPage - 1)}
-                disabled={inTransitPage === 1}
-              >
-                <MoveLeftIcon size={22} />
-              </button>
-              <div className="page-numbers">
-                {Array.from({ length: Math.ceil(inTransitOrders.length / ordersPerPage) }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`page-btn ${pageNum === inTransitPage ? "active" : ""}`}
-                      onClick={() => setInTransitPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ),
-                )}
-              </div>
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setInTransitPage(inTransitPage + 1)}
-                disabled={inTransitPage === Math.ceil(inTransitOrders.length / ordersPerPage)}
-              >
-                <MoveRightIcon />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="orders-section">
-          <h2 className="section-title">
-            <CheckCircle size={22} /> Órdenes Completadas
-          </h2>
-          <div className="orders-container">
-            {completedOrders.length > 0 ? (
-              paginateOrders(completedOrders, completedPage).map((order) => renderOrderCard(order))
-            ) : (
-              <div className="empty-orders">
-                <p>No hay órdenes completadas</p>
-              </div>
-            )}
-          </div>
-          {completedOrders.length > 0 && (
-            <div className="pagination-section">
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setCompletedPage(completedPage - 1)}
-                disabled={completedPage === 1}
-              >
-                <MoveLeftIcon size={22} />
-              </button>
-              <div className="page-numbers">
-                {Array.from({ length: Math.ceil(completedOrders.length / ordersPerPage) }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`page-btn ${pageNum === completedPage ? "active" : ""}`}
-                      onClick={() => setCompletedPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ),
-                )}
-              </div>
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setCompletedPage(completedPage + 1)}
-                disabled={completedPage === Math.ceil(completedOrders.length / ordersPerPage)}
-              >
-                <MoveRightIcon />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="orders-section">
-          <h2 className="section-title">
-            <XCircle size={22} /> Órdenes Canceladas
-          </h2>
-          <div className="orders-container">
-            {canceledOrders.length > 0 ? (
-              paginateOrders(canceledOrders, canceledPage).map((order) => renderOrderCard(order))
-            ) : (
-              <div className="empty-orders">
-                <p>No hay órdenes canceladas</p>
-              </div>
-            )}
-          </div>
-          {canceledOrders.length > 0 && (
-            <div className="pagination-section">
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setCanceledPage(canceledPage - 1)}
-                disabled={canceledPage === 1}
-              >
-                <MoveLeftIcon size={22} />
-              </button>
-              <div className="page-numbers">
-                {Array.from({ length: Math.ceil(canceledOrders.length / ordersPerPage) }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      className={`page-btn ${pageNum === canceledPage ? "active" : ""}`}
-                      onClick={() => setCanceledPage(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  ),
-                )}
-              </div>
-              <button
-                className="pagination-btn nav-btn"
-                onClick={() => setCanceledPage(canceledPage + 1)}
-                disabled={canceledPage === Math.ceil(canceledOrders.length / ordersPerPage)}
-              >
-                <MoveRightIcon />
-              </button>
-            </div>
-          )}
-        </div>
-      </>
-    )
-  }
+  const orderCounts = getOrderCounts()
 
   if (loading) {
     return (
-      <div className="orders-loading">
-        <Loader2 size={50} className="animate-spin" />
-        <p>Cargando órdenes...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="orders-error">
-        <p>{error}</p>
-        <button onClick={() => window.location.reload()} className="order-btn">
-          Reintentar
-        </button>
+      <div className="delivery-orders-loading">
+        <div className="loading-spinner">
+          <Loader2 size={50} className="animate-spin" />
+        </div>
+        <h3>Cargando órdenes...</h3>
+        <p>Obteniendo las órdenes del sistema</p>
       </div>
     )
   }
 
   return (
-    <div className="orders-dashboard">
-      <div className="dashboard-header">
-        <h1>Dashboard de Ventas</h1>
-        <div className="dashboard-summary">
-          <div className="summary-card">
-            <h3>Pendientes</h3>
-            <span className="summary-count">{orders.filter((o) => o.Status === "Pending").length}</span>
+    <div className="delivery-orders-dashboard">
+      {/* Professional Header */}
+      <div className="delivery-header">
+        <div className="header-content">
+          <div className="header-title">
+            <ShoppingBag size={32} />
+            <div>
+              <h1>Dashboard de Órdenes</h1>
+              <p>Gestiona todas las órdenes del sistema</p>
+            </div>
           </div>
-          <div className="summary-card">
-            <h3>En camino</h3>
-            <span className="summary-count">{orders.filter((o) => o.Status === "En camino").length}</span>
-          </div>
-          <div className="summary-card">
-            <h3>Completadas</h3>
-            <span className="summary-count">{orders.filter((o) => o.Status === "Completed").length}</span>
-          </div>
-          <div className="summary-card">
-            <h3>Canceladas</h3>
-            <span className="summary-count">{orders.filter((o) => o.Status === "Cancelada").length}</span>
+          <div className="header-stats">
+            <div className="stat-card">
+              <div className="stat-number">{orderCounts["Pending"]}</div>
+              <div className="stat-label">Pendientes</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{orderCounts["En camino"]}</div>
+              <div className="stat-label">En Camino</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-number">{orderCounts["Completada"]}</div>
+              <div className="stat-label">Completadas</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="dashboard-filters">
-        <div className="filter-group">
-          <label htmlFor="statusFilter">
-            <Filter size={18} /> Filtrar por estado:
-          </label>
-          <select id="statusFilter" value={statusFilter} onChange={handleFilterChange} className="filter-select">
-            <option value="All">Todos los estados</option>
-            <option value="Pending">Pendientes</option>
-            <option value="En camino">En camino</option>
-            <option value="Completed">Completadas</option>
-            <option value="Canceled">Canceladas</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="searchQuery">
-            <Search size={18} /> Buscar:
-          </label>
+      {/* Search Bar */}
+      <div className="search-section">
+        <div className="search-container">
+          <Search size={20} />
           <input
-            id="searchQuery"
             type="text"
-            placeholder="Cliente, dirección o # de orden"
+            placeholder="Buscar por cliente, dirección o número de orden..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="filter-select"
+            className="search-input"
           />
         </div>
       </div>
 
-      <div className="dashboard-content">{renderOrders()}</div>
+      {/* Status Tabs */}
+      <div className="status-tabs">
+        {(["Pending", "En camino", "Completada", "Cancelada"] as const).map((status) => {
+          const config = getStatusConfig(status)
+          const Icon = config.icon
+          const count = orderCounts[status]
+          const isActive = activeTab === status
 
+          return (
+            <button
+              key={status}
+              className={`status-tab ${config.color} ${isActive ? "active" : ""}`}
+              onClick={() => setActiveTab(status)}
+            >
+              <Icon size={20} />
+              <span className="tab-label">{config.label}</span>
+              <span className="tab-count">{count}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Orders Content */}
+      <div className="orders-content">
+        <div className="orders-section">
+          <div className="section-header">
+            <h2>
+              {(() => {
+                const config = getStatusConfig(activeTab)
+                const Icon = config.icon
+                return (
+                  <>
+                    <Icon size={24} />
+                    Órdenes {config.label}
+                  </>
+                )
+              })()}
+            </h2>
+            <div className="section-info">
+              {orderCounts[activeTab]} {orderCounts[activeTab] === 1 ? "orden" : "órdenes"}
+            </div>
+          </div>
+
+          {/* Orders Grid */}
+          <div className="orders-grid">
+            {getPaginatedOrders(activeTab).length > 0 ? (
+              getPaginatedOrders(activeTab).map((order) => (
+                <div key={order.OrderId} className={`order-card ${activeTab.toLowerCase().replace(" ", "-")}`}>
+                  <div className="order-card-header">
+                    <div className="order-number">
+                      <ShoppingBag size={18} />
+                      <span>#{order.OrderId}</span>
+                    </div>
+                    <div className={`order-status ${activeTab.toLowerCase().replace(" ", "-")}`}>
+                      {(() => {
+                        const config = getStatusConfig(activeTab)
+                        const Icon = config.icon
+                        return (
+                          <>
+                            <Icon size={16} />
+                            {config.label}
+                          </>
+                        )
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="order-card-body">
+                    <div className="order-info-grid">
+                      <div className="info-item-dp customer-name">
+                        <div className="info-icon">
+                          <User size={16} />
+                          <span className="info-label">Cliente</span>
+                        </div>
+                        <div className="info-content">
+                          <span className="info-value">{order.ClientName}</span>
+                        </div>
+                      </div>
+
+                      <div className="info-item-dp order-date">
+                        <div className="info-icon">
+                          <Calendar size={16} />
+                          <span className="info-label">Fecha</span>
+                        </div>
+                        <div className="info-content">
+                          <span className="info-value">{formatDate(order.OrderDate)}</span>
+                        </div>
+                      </div>
+
+                      <div className="info-item-dp delivery-address">
+                        <div className="info-icon">
+                          <MapPin size={16} />
+                          <span className="info-label">Dirección</span>
+                        </div>
+                        <div className="info-content">
+                          <span className="info-value">{order.DeliveryAddress}</span>
+                        </div>
+                      </div>
+
+                      <div className="info-item-dp order-total">
+                        <div className="info-icon">
+                          <DollarSign size={16} />
+                          <span className="info-label">Total</span>
+                        </div>
+                        <div className="info-content">
+                          <span className="info-value price">{formatCurrency(order.DiscountedTotal)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="order-card-footer">
+                    <button className="btn-view-details" onClick={() => handleViewDetails(order.OrderId)}>
+                      <Eye size={16} />
+                      Ver Detalles
+                    </button>
+                    {order.Status === "Pending" && (
+                      <button className="btn-assign-delivery" onClick={() => handleAssignDelivery(order.OrderId)}>
+                        <Truck size={16} />
+                        Asignar Repartidor
+                      </button>
+                    )}
+                    {(order.Status === "Pending" || order.Status === "En camino") && (
+                      <button className="btn-cancel-order" onClick={() => handleCancelOrder(order.OrderId)}>
+                        <XCircle size={16} />
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state">
+                {(() => {
+                  const config = getStatusConfig(activeTab)
+                  const Icon = config.icon
+                  return (
+                    <>
+                      <Icon size={64} />
+                      <h3>No hay órdenes {config.label.toLowerCase()}</h3>
+                      <p>
+                        {activeTab === "Pending"
+                          ? "No hay órdenes pendientes por procesar"
+                          : activeTab === "En camino"
+                            ? "No hay órdenes en camino actualmente"
+                            : activeTab === "Completada"
+                              ? "Aún no se han completado órdenes"
+                              : "No hay órdenes canceladas"}
+                      </p>
+                    </>
+                  )
+                })()}
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {getTotalPages(activeTab) > 1 && (
+            <div className="pagination-section">
+              <button
+                className="pagination-btn nav-btn"
+                onClick={() => setCurrentPage(activeTab, getCurrentPage(activeTab) - 1)}
+                disabled={getCurrentPage(activeTab) === 1}
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="page-numbers">
+                {Array.from({ length: getTotalPages(activeTab) }, (_, i) => i + 1).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    className={`page-btn ${pageNum === getCurrentPage(activeTab) ? "active" : ""}`}
+                    onClick={() => setCurrentPage(activeTab, pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="pagination-btn nav-btn"
+                onClick={() => setCurrentPage(activeTab, getCurrentPage(activeTab) + 1)}
+                disabled={getCurrentPage(activeTab) === getTotalPages(activeTab)}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
       {showAssignModal && selectedOrderId && (
         <AssignDeliveryModal
           orderId={selectedOrderId}

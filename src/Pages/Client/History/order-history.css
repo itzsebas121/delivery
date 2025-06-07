@@ -1,75 +1,10 @@
-:root {
-  /* Colores principales - Paleta de comida */
-  --primary-orange: #ff6b35;
-  --primary-red: #e74c3c;
-  --primary-yellow: #f39c12;
-  --primary-brown: #8b4513;
-
-  /* Colores secundarios */
-  --secondary-orange: #ff8c42;
-  --secondary-red: #c0392b;
-  --secondary-yellow: #f1c40f;
-  --secondary-brown: #a0522d;
-
-  /* Colores de acento */
-  --accent-green: #27ae60;
-  --accent-cream: #fdf6e3;
-  --accent-gold: #d4af37;
-
-  /* Colores neutros */
-  --white: #ffffff;
-  --light-gray: #f8f9fa;
-  --medium-gray: #6c757d;
-  --dark-gray: #343a40;
-  --black: #000000;
-
-  /* Colores de estado */
-  --success: #28a745;
-  --error: #dc3545;
-  --warning: #ffc107;
-  --info: #17a2b8;
-
-  /* Gradientes */
-  --gradient-warm: linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-red) 100%);
-  --gradient-gold: linear-gradient(135deg, var(--accent-gold) 0%, var(--primary-yellow) 100%);
-
-  /* Sombras */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15), 0 10px 10px rgba(0, 0, 0, 0.04);
-
-  /* Tipografía */
-  --font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-
-  /* Espaciado */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-2xl: 3rem;
-
-  /* Border radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-
-  --transition-fast: 0.15s ease-in-out;
-  --transition-normal: 0.3s ease-in-out;
-  --transition-slow: 0.5s ease-in-out;
+@import '../../../StylesGeneral/Pagination.css';
+@import '../../../StylesGeneral/ProfesionalHeader.css';
+.order-history-dashboard{
+  background-color: var(--accent-cream);
 }
-
 .order-history-container {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: linear-gradient(135deg, var(--accent-cream) 0%, var(--light-gray) 100%);
   font-family: var(--font-family);
   padding: var(--spacing-md);
@@ -79,9 +14,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 1em;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--accent-cream) 0%, var(--light-gray) 100%);
 }
+.loading-spinner {
+  color: var(--primary-orange);
+  display: flex;
+  flex-direction: column;
+}
+
 
 .loading-icon {
   color: var(--primary-orange);
@@ -103,43 +46,7 @@
   animation: spin 1s linear infinite;
 }
 
-.order-history-header {
-  text-align: center;
-  margin-bottom: var(--spacing-xl);
-  background: var(--white);
-  padding: var(--spacing-xl);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-}
 
-.order-history-title {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  color: var(--dark-gray);
-  margin: 0 0 var(--spacing-sm) 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
-}
-
-.order-history-title svg {
-  color: var(--primary-orange);
-}
-
-.order-history-subtitle {
-  font-size: var(--font-size-base);
-  color: var(--medium-gray);
-  margin: 0;
-}
-
-.order-history-controls {
-  background: var(--white);
-  padding: var(--spacing-lg);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  margin-bottom: var(--spacing-xl);
-}
 
 .order-filters {
   display: grid;
@@ -223,7 +130,6 @@
   transform: translateY(-1px);
 }
 
-/* Estadísticas compactas */
 .order-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -339,6 +245,8 @@
   transition: var(--transition-normal);
   cursor: pointer;
   position: relative;
+  width: 100%;
+  max-width: 350px;
 }
 
 .order-card:hover {
@@ -377,7 +285,11 @@
 .order-status-floating.cancelada {
   background: var(--error);
 }
-
+.order-info-grid-o{
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
 .order-card-content {
   padding: var(--spacing-lg);
   padding-top: calc(var(--spacing-lg) + 16px);
@@ -387,7 +299,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
 }
 
 .order-card-id {
@@ -411,9 +322,6 @@
   gap: var(--spacing-xs);
 }
 
-.order-card-body {
-  margin-bottom: var(--spacing-md);
-}
 
 .order-card-address {
   display: flex;
@@ -482,55 +390,6 @@
   box-shadow: var(--shadow-md);
 }
 
-.order-pagination {
-  padding: var(--spacing-lg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--spacing-sm);
-  border-top: 1px solid rgba(108, 117, 125, 0.1);
-  flex-wrap: wrap;
-}
-
-.order-pagination-btn {
-  background: var(--white);
-  border: 2px solid var(--light-gray);
-  color: var(--medium-gray);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition-normal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.order-pagination-btn:hover:not(:disabled) {
-  background: var(--primary-orange);
-  color: var(--white);
-  border-color: var(--primary-orange);
-}
-
-.order-pagination-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.order-pagination-btn.active {
-  background: var(--primary-orange);
-  color: var(--white);
-  border-color: var(--primary-orange);
-}
-
-.order-pagination-info {
-  font-size: var(--font-size-xs);
-  color: var(--medium-gray);
-  margin-left: var(--spacing-md);
-}
 
 .order-empty {
   text-align: center;
@@ -568,12 +427,15 @@
   }
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
   .order-history-container {
     padding: var(--spacing-sm);
   }
-
+  .order-info-grid-o{
+    grid-template-columns: 1fr;
+    
+  }
   .order-history-header {
     padding: var(--spacing-lg);
   }
@@ -588,8 +450,6 @@
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
   }
-
-  /* Estadísticas en móvil - sin labels */
   .order-stats {
     grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-xs);
@@ -619,52 +479,6 @@
     gap: var(--spacing-sm);
   }
 
-  .order-pagination {
-    flex-direction: column;
-    gap: var(--spacing-md);
-  }
 
-  .order-pagination-info {
-    margin-left: 0;
-  }
-}
 
-@media (max-width: 480px) {
-  .order-history-container {
-    padding: var(--spacing-xs);
-  }
-
-  .order-history-header {
-    padding: var(--spacing-md);
-  }
-
-  .order-history-title {
-    font-size: var(--font-size-lg);
-  }
-
-  .order-stat-card {
-    padding: var(--spacing-xs);
-  }
-
-  .order-stat-icon {
-    width: 20px;
-    height: 20px;
-  }
-
-  .order-stat-number {
-    font-size: var(--font-size-sm);
-  }
-
-  .order-card-content {
-    padding: var(--spacing-md);
-    padding-top: calc(var(--spacing-md) + 16px);
-  }
-
-  .order-card-total {
-    padding: var(--spacing-sm);
-  }
-
-  .order-total-amount {
-    font-size: var(--font-size-base);
-  }
 }

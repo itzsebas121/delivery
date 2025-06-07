@@ -150,11 +150,11 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
             <>
               {/* Información del pedido */}
               <div className="order-info-section">
-                <h3 className="order-section-title">
+                <h3 className="order-section-title-m">
                   <Package size={20} />
                   Información del Pedido
                 </h3>
-                <div className="order-info-grid">
+                <div className="order-info-grid-m">
                   <div className="order-info-item">
                     <span className="order-info-label">
                       <Calendar size={14} />
@@ -210,7 +210,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
 
               {/* Productos */}
               <div className="order-products-section">
-                <h3 className="order-section-title">
+                <h3 className="order-section-title-m">
                   <ShoppingCart size={20} />
                   Productos ({orderDetails.length})
                 </h3>

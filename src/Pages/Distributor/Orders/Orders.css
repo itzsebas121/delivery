@@ -152,7 +152,6 @@
   gap: 24px;
 }
 
-/* Tarjetas de órdenes mejoradas */
 .order-card {
   background: var(--white);
   border-radius: 12px;
@@ -160,6 +159,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e1e5e9;
   transition: all 0.3s ease;
+  margin: 0 auto;
 }
 
 .order-card:hover {
@@ -345,6 +345,83 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 24px;
+}
+.order-card-footer button{
+  align-items: center;
+  justify-content: center;
+}
+.btn-assign-delivery {
+  background: var(--success);
+  color: var(--white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 36px;
+}
+
+.btn-assign-delivery:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-cancel-order {
+  background: var(--error);
+  color: var(--white);
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 36px;
+}
+
+.btn-cancel-order:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  background: #dc2626;
+}
+
+.order-card-footer {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.order-card-footer button {
+  flex: 1;
+  min-width: 120px;
+}
+
+
+.order-card.pending {
+  border-color: #f59e0b;
+}
+
+.order-status.pending {
+  background: #f59e0b;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .order-card-footer {
+    flex-direction: column;
+  }
+
+  .order-card-footer button {
+    min-width: auto;
+  }
 }
 
 @keyframes spin {
@@ -770,10 +847,6 @@
   overflow-y: auto;
 }
 
-.order-details-content {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr;
-}
 
 .order-details-info {
   padding: 30px;
@@ -800,11 +873,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.order-info-grid {
-  display: grid;
-  gap: 16px;
 }
 
 .info-item {
@@ -1006,111 +1074,7 @@
   margin-top: 8px;
 }
 
-/* Paginación mejorada para cada sección */
-.pagination-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  padding: 24px 20px;
-  margin-top: 20px;
-  border-top: 1px solid #e1e5e9;
-  background-color: #f9f9f9;
-  border-radius: 0 0 12px 12px;
-  flex-wrap: wrap;
-}
 
-.pagination-btn.nav-btn {
-  background: var(--white);
-  border: 2px solid #e1e5e9;
-  color: var(--medium-gray);
-  padding: 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-weight: 600;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.pagination-btn.nav-btn:hover:not(:disabled) {
-  border-color: var(--primary-orange);
-  color: var(--primary-orange);
-  background: rgba(255, 107, 53, 0.05);
-  transform: translateY(-1px);
-}
-
-.pagination-btn.nav-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.page-numbers {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.page-btn {
-  min-width: 40px;
-  height: 40px;
-  border: 2px solid transparent;
-  background: var(--white);
-  color: var(--medium-gray);
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #e1e5e9;
-}
-
-.page-btn:hover:not(:disabled):not(.dots) {
-  border-color: var(--primary-orange);
-  color: var(--primary-orange);
-  background: rgba(255, 107, 53, 0.05);
-  transform: translateY(-1px);
-}
-
-.page-btn.active {
-  background: var(--primary-orange);
-  border-color: var(--primary-orange);
-  color: var(--white);
-  box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
-  transform: translateY(-1px);
-}
-
-.page-btn.dots {
-  border: none;
-  cursor: default;
-  background: transparent;
-  color: var(--medium-gray);
-  font-weight: 400;
-}
-
-.page-btn.dots:hover {
-  transform: none;
-  background: transparent;
-  border: none;
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--medium-gray);
-  font-weight: 500;
-  text-align: center;
-  margin-left: 16px;
-}
-
-/* Responsive mejorado */
 @media (max-width: 1200px) {
   .orders-dashboard {
     padding: 20px;
@@ -1135,9 +1099,6 @@
 }
 
 @media (max-width: 992px) {
-  .order-details-content {
-    grid-template-columns: 1fr;
-  }
 
   .order-details-info {
     padding: 24px;
@@ -1239,35 +1200,6 @@
   .order-totals {
     max-width: 100%;
   }
-
-  .pagination-section {
-    flex-direction: column;
-    gap: 16px;
-    padding: 20px 16px;
-  }
-
-  .page-numbers {
-    order: 1;
-  }
-
-  .pagination-btn.nav-btn {
-    order: 2;
-    width: 100%;
-    max-width: 200px;
-  }
-
-  .pagination-info {
-    order: 3;
-    margin-left: 0;
-    font-size: 13px;
-  }
-
-  .page-btn {
-    min-width: 36px;
-    height: 36px;
-    font-size: 13px;
-  }
-
   .delivery-person-card {
     padding: 12px;
   }
@@ -1337,7 +1269,7 @@
   }
 
   .order-card-body {
-    padding: 16px;
+    padding: 10px;
   }
 
   .order-info p {
@@ -1436,30 +1368,6 @@
   .modal-actions button {
     width: 100%;
   }
-
-  .pagination-section {
-    padding: 16px 12px;
-  }
-
-  .page-numbers {
-    gap: 4px;
-  }
-
-  .page-btn {
-    min-width: 32px;
-    height: 32px;
-    font-size: 12px;
-  }
-
-  .pagination-btn.nav-btn {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
-  .pagination-info {
-    font-size: 12px;
-  }
-
   .delivery-person-card {
     padding: 10px;
     gap: 12px;
@@ -1486,21 +1394,7 @@
     max-height: 250px;
   }
 
-  /* Ocultar algunos números de página en móvil */
-  .page-numbers .page-btn:not(.active):not(.dots) {
-    display: none;
-  }
 
-  .page-numbers .page-btn.active,
-  .page-numbers .page-btn.dots {
-    display: flex;
-  }
-
-  /* Mostrar solo página actual y adyacentes en móvil */
-  .page-numbers .page-btn:nth-child(-n + 3),
-  .page-numbers .page-btn:nth-last-child(-n + 3) {
-    display: flex;
-  }
 }
 
 /* Mejoras para evitar desbordamiento */

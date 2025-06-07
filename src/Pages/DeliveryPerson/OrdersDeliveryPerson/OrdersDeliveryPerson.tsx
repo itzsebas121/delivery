@@ -23,6 +23,7 @@ import { useAlert } from "../../../components/Alerts/Alert-system"
 import OrderDeliveryModal from "./OrderDeliveryModal"
 import { baseURLRest } from "../../../config"
 import "./OrderDelivery.css"
+import '../../../StylesGeneral/ProfesionalHeader.css'
 
 interface Order {
   OrderId: number

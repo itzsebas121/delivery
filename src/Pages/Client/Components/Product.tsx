@@ -245,44 +245,39 @@ const Product = () => {
 
       {/* Paginación mejorada */}
       {!loadingp && totalPages > 1 && (
-        <div className="paginationp-compact">
-          <div className="paginationp-controls">
-            {/* Botón anterior */}
-            <button
-              className="paginationp-btn nav-btn"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-            >
-              <ChevronLeft size={16} />
-            </button>
+        <div className="pagination-section">
+          {/* Botón anterior */}
+          <button
+            className="pagination-btn nav-btn"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+          >
+            <ChevronLeft size={16} />
+          </button>
 
-            {/* Números de página */}
-            <div className="paginationp-numbers">
-              {getPageNumbers().map((pageNum, index) => (
-                <React.Fragment key={index}>
-                  {pageNum === "..." ? (
-                    <span className="paginationp-ellipsis">...</span>
-                  ) : (
-                    <button
-                      className={`paginationp-number ${page === pageNum ? "active" : ""}`}
-                      onClick={() => handlePageChange(pageNum as number)}
-                    >
-                      {pageNum}
-                    </button>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-
-            {/* Botón siguiente */}
-            <button
-              className="paginationp-btn nav-btn"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages}
-            >
-              <ChevronRight size={16} />
-            </button>
+          {/* Números de página */}
+          <div className="page-numbers">
+            {getPageNumbers().map((pageNum, index) => (
+              <React.Fragment key={index}>
+                {
+                  <button
+                    className={`page-btn ${page === pageNum ? "active" : ""}`}
+                    onClick={() => handlePageChange(pageNum as number)}
+                  >
+                    {pageNum}
+                  </button>
+                }
+              </React.Fragment>
+            ))}
           </div>
+
+          <button
+            className="pagination-btn nav-btn"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       )}
     </div>

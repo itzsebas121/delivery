@@ -20,7 +20,8 @@ import ProductsDistributor from "./Pages/Distributor/ProductsDistributor/Product
 
 import { HomeDeliveryPerson } from "./Pages/DeliveryPerson/HomeDeliveryPerson/HomeDeliveryPerson"
 import { OrdersDeliveryPerson } from "./Pages/DeliveryPerson/OrdersDeliveryPerson/OrdersDeliveryPerson"
-
+import './StylesGeneral/Pagination.css'
+import './StylesGeneral/ProfesionalHeader.css'
 function App() {
   return (
     <Router>

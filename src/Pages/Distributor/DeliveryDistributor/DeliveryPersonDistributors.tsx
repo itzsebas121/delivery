@@ -1,4 +1,6 @@
-import type React from "react"
+"use client"
+
+import React from "react"
 import { useState, useEffect } from "react"
 import {
   Search,
@@ -38,6 +40,7 @@ const DeliveryPersonsDistributor = () => {
   // Paginación
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
 
   // Filtros
   const [nameFilter, setNameFilter] = useState("")
@@ -55,6 +58,9 @@ const DeliveryPersonsDistributor = () => {
     Region: "",
     Password: "",
   })
+
+  // Agregar después de las variables de estado existentes
+  const [allFilteredData, setAllFilteredData] = useState<DeliveryPerson[]>([])
 
   const { showSuccess, showError, showConfirm } = useAlert()
 
@@ -93,7 +99,19 @@ const DeliveryPersonsDistributor = () => {
         filteredData = filteredData.filter((person: DeliveryPerson) => person.IsAvailable === isAvailable)
       }
 
-      setDeliveryPersons(filteredData)
+      // Guardar todos los datos filtrados
+      setAllFilteredData(filteredData)
+
+      // Calcular paginación basada en datos filtrados
+      const totalItems = filteredData.length
+      setTotalPages(Math.ceil(totalItems / limit))
+
+      // Aplicar paginación del lado del cliente
+      const startIndex = (page - 1) * limit
+      const endIndex = startIndex + limit
+      const paginatedData = filteredData.slice(startIndex, endIndex)
+
+      setDeliveryPersons(paginatedData)
     } catch (err) {
       showError("Error", "No se pudieron cargar los repartidores")
       console.error(err)
@@ -218,6 +236,53 @@ const DeliveryPersonsDistributor = () => {
     )
   }
 
+  // Función para generar los números de página a mostrar
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      // Si hay pocas páginas, mostrar todas
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Lógica para mostrar páginas con puntos suspensivos
+      if (page <= 3) {
+        // Mostrar primeras páginas
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      } else if (page >= totalPages - 2) {
+        // Mostrar últimas páginas
+        pages.push(1)
+        pages.push("...")
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i)
+        }
+      } else {
+        // Mostrar páginas del medio
+        pages.push(1)
+        pages.push("...")
+        for (let i = page - 1; i <= page + 1; i++) {
+          pages.push(i)
+        }
+        pages.push("...")
+        pages.push(totalPages)
+      }
+    }
+
+    return pages
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+      setPage(newPage)
+    }
+  }
+
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A"
     return new Date(dateString).toLocaleDateString("es-ES", {
@@ -257,7 +322,7 @@ const DeliveryPersonsDistributor = () => {
             <h1>
               <Users size={24} /> Gestión de Repartidores
             </h1>
-            <span className="delivery-count">{deliveryPersons.length} repartidores</span>
+            <span className="delivery-count">{allFilteredData.length} repartidores</span>
           </div>
           <button className="btn-primary" onClick={() => openModal("create")}>
             <Plus size={18} />
@@ -406,21 +471,40 @@ const DeliveryPersonsDistributor = () => {
         )}
       </div>
 
-      {/* Paginación */}
-      {!loading && deliveryPersons.length > 0 && (
+      {/* Paginación mejorada */}
+      {!loading && totalPages > 1 && (
         <div className="pagination-section">
-          <button className="pagination-btn nav-btn" onClick={() => setPage(page - 1)} disabled={page === 1}>
+          <button
+            className="pagination-btn nav-btn"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+            title="Página anterior"
+          >
             <ChevronLeft size={18} />
           </button>
 
           <div className="page-numbers">
-            <button className="page-btn active">{page}</button>
+            {getPageNumbers().map((pageNum, index) => (
+              <React.Fragment key={index}>
+                {pageNum === "..." ? (
+                  <span className="page-ellipsis">...</span>
+                ) : (
+                  <button
+                    className={`page-btn ${page === pageNum ? "active" : ""}`}
+                    onClick={() => handlePageChange(pageNum as number)}
+                  >
+                    {pageNum}
+                  </button>
+                )}
+              </React.Fragment>
+            ))}
           </div>
 
           <button
             className="pagination-btn nav-btn"
-            onClick={() => setPage(page + 1)}
-            disabled={deliveryPersons.length < limit}
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+            title="Página siguiente"
           >
             <ChevronRight size={18} />
           </button>
