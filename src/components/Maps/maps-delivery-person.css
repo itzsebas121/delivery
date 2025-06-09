@@ -8,7 +8,6 @@
   color: #333;
   position: absolute;
   top: 0px;
-  text-transform: capitalize;
   border: #e4e4e478 1px solid;
 }
 @media (max-width: 768px) {

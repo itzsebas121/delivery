@@ -187,7 +187,9 @@
   font-weight: 500;
   line-height: 1.4;
 }
-
+.map{
+  position: relative;
+}
 .order-info-status {
   display: flex;
   align-items: center;
@@ -204,15 +206,15 @@
   background: var(--warning);
 }
 
-.order-info-status.in-transit {
+.order-info-status.en-camino {
   background: var(--info);
 }
 
-.order-info-status.completed {
+.order-info-status.completada {
   background: var(--success);
 }
 
-.order-info-status.cancelled {
+.order-info-status.cancelada {
   background: var(--error);
 }
 

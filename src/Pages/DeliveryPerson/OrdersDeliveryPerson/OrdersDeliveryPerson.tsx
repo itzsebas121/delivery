@@ -80,7 +80,6 @@ export function OrdersDeliveryPerson() {
       const allOrders = [...pendingData, ...historyData].filter(
         (order) => order.Status === "En camino" || order.Status === "Completada" || order.Status === "Cancelada",
       )
-
       setOrders(allOrders)
     } catch (error) {
       console.error("Error fetching orders:", error)
@@ -503,7 +502,6 @@ export function OrdersDeliveryPerson() {
                 disabled={getCurrentPage(activeTab) === 1}
               >
                 <ChevronLeft size={18} />
-                <span className="btn-text">Anterior</span>
               </button>
 
               <div className="page-numbers">
@@ -523,7 +521,6 @@ export function OrdersDeliveryPerson() {
                 onClick={() => setCurrentPage(activeTab, getCurrentPage(activeTab) + 1)}
                 disabled={getCurrentPage(activeTab) === getTotalPages(activeTab)}
               >
-                <span className="btn-text">Siguiente</span>
                 <ChevronRight size={18} />
               </button>
             </div>

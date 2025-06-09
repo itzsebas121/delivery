@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import {  useState } from "react"
 import { X, MapPin, Navigation, CheckCircle, Phone, User, DollarSign, Loader2, Calendar } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 import MapsDeliveryPerson from "../../../components/Maps/MapsDeliveryPerson"
@@ -47,7 +47,6 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           }
-          console.log("Current location obtained:", location)
           resolve(location)
         },
         (error) => {
@@ -167,6 +166,7 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
                 <MapsDeliveryPerson
                   startCoordinates={order.StartCoordinates || ","}
                   deliveryCoordinates={order.DeliveryCoordinates || ","}
+                  orderstatus={order.Status}
                 />
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
               ) : (
                 <>
                   <Navigation size={16} />
-                  Iniciar Ruta
+                  Marcar Ruta
                 </>
               )}
             </button>

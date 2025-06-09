@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -23,19 +25,22 @@ import OrderDetailsModal from "./order-detail-modal"
 import "./order-history.css"
 import { useAuth } from "../../../context/Authcontext"
 import { useAlert } from "../../../components/Alerts/Alert-system"
+
 interface Order {
   OrderId: number
   OrderDate: string
   Status: "Pending" | "Completada" | "Cancelada" | "En camino"
   DeliveryAddress: string
-  total: number
+  Subtotal: number
+  DeliveryCoordinates: string
+  StartCoordinates: string
 }
 
 type OrderStatus = "Pending" | "En camino" | "Completada" | "Cancelada"
 
 const OrderHistory: React.FC<{ clientId?: number }> = () => {
-  const {showConfirm, showError, showSuccess} = useAlert()
-  const [orders, setOrders] = useState<Order[]>([])
+  const { showConfirm, showError, showSuccess } = useAlert()
+  const [orders, setOrders] = useState<(Order & { total: number })[]>([])
   const [loadingp, setLoadingp] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { user, loading } = useAuth()
@@ -56,21 +61,42 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
   const ordersPerPage = 3
 
   // Modal
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showModal, setShowModal] = useState(false)
+
+  const groupOrdersById = (orders: Order[]) => {
+    const grouped = orders.reduce(
+      (acc, order) => {
+        const existingOrder = acc.find((o) => o.OrderId === order.OrderId)
+        if (existingOrder) {
+          existingOrder.total += order.Subtotal
+        } else {
+          acc.push({
+            ...order,
+            total: order.Subtotal,
+          })
+        }
+        return acc
+      },
+      [] as (Order & { total: number })[],
+    )
+
+    return grouped
+  }
 
   const fetchOrders = async () => {
     setLoadingp(true)
     setError(null)
     try {
       const response = await fetch(`${baseURLRest}/product-history/${clientId}`)
-
+      console.log(`${baseURLRest}/product-history/${clientId}`)
       if (!response.ok) {
         throw new Error("Error al cargar los pedidos")
       }
 
       const data: Order[] = await response.json()
-      const sortedData = data.sort((a, b) => new Date(b.OrderDate).getTime() - new Date(a.OrderDate).getTime())
+      const groupedOrders = groupOrdersById(data)
+      const sortedData = groupedOrders.sort((a, b) => new Date(b.OrderDate).getTime() - new Date(a.OrderDate).getTime())
       setOrders(sortedData)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
@@ -177,8 +203,8 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
   }
 
   // Open order details
-  const openOrderDetails = (orderId: number) => {
-    setSelectedOrderId(orderId)
+  const openOrderDetails = (order: Order) => {
+    setSelectedOrder(order)
     setShowModal(true)
   }
 
@@ -374,7 +400,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
                   </div>
 
                   <div className="order-card-footer">
-                    <button className="btn-view-details" onClick={() => openOrderDetails(order.OrderId)}>
+                    <button className="btn-view-details" onClick={() => openOrderDetails(order)}>
                       <Eye size={16} />
                       Ver Detalles
                     </button>
@@ -476,13 +502,21 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
       </div>
 
       {/* Order Details Modal */}
-      {showModal && selectedOrderId && (
+      {showModal && selectedOrder && (
         <OrderDetailsModal
-          orderId={selectedOrderId}
+          order={{
+            orderId: selectedOrder.OrderId,
+            orderDate: selectedOrder.OrderDate,
+            status: selectedOrder.Status,
+            deliveryAddress: selectedOrder.DeliveryAddress,
+            DeliveryCoordinates: selectedOrder.DeliveryCoordinates,
+            StartCoordinates: selectedOrder.StartCoordinates,
+          }}
           onClose={() => {
             setShowModal(false)
-            setSelectedOrderId(null)
+            setSelectedOrder(null)
           }}
+          orderId={selectedOrder.OrderId}
         />
       )}
     </div>

@@ -556,7 +556,7 @@ app.get("/delivery/:deliveryId/pending-orders", async (req, res) => {
     const result = await pool
       .request()
       .input("DeliveryId", sql.Int, deliveryId)
-      .execute("GetPendingOrdersForDelivery");
+      .execute("GetPendingOrdersForDelivery"); 
 
     res.json(result.recordset);
   } catch (error) {

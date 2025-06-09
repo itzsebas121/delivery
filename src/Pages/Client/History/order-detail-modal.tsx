@@ -7,7 +7,6 @@ import {
   Package,
   Calendar,
   MapPin,
-  CreditCard,
   Clock,
   CheckCircle,
   XCircle,
@@ -17,10 +16,11 @@ import {
   Loader2,
   AlertCircle,
   RotateCcw,
+  Locate,
 } from "lucide-react"
 import { baseURLRest } from "../../../config"
 import "./order-details-modal.css"
-
+import MapsDeliveryPerson from "../../../components/Maps/MapsDeliveryPerson"
 interface OrderDetail {
   ProductId: number
   ProductName: string
@@ -32,23 +32,23 @@ interface OrderDetail {
 interface OrderDetailsModalProps {
   orderId: number
   onClose: () => void
+  order: {
+    orderId: number
+    orderDate: string
+    status: string
+    deliveryAddress: string
+    DeliveryCoordinates: string
+    StartCoordinates: string
+  }
 }
 
-const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose }) => {
+const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, orderId, onClose }) => {
   const [orderDetails, setOrderDetails] = useState<OrderDetail[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const orderInfo = {
-    orderId: orderId,
-    orderDate: "2025-05-26T07:51:45.577Z",
-    status: "Pending" as const,
-    deliveryAddress: "Calle 123, Colonia Centro, Ciudad, CP 12345",
-    paymentMethod: "PayPal",
-    estimatedDelivery: "2025-05-28",
-  }
-
   useEffect(() => {
     fetchOrderDetails()
+    alert(JSON.stringify(order))
   }, [orderId])
 
   const fetchOrderDetails = async () => {
@@ -57,7 +57,6 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
 
     try {
       const response = await fetch(`${baseURLRest}/order-detail/${orderId}`)
-
       if (!response.ok) {
         throw new Error("Error al cargar los detalles del pedido")
       }
@@ -160,7 +159,7 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
                       <Calendar size={14} />
                       Fecha del pedido
                     </span>
-                    <span className="order-info-value">{formatDate(orderInfo.orderDate)}</span>
+                    <span className="order-info-value">{formatDate(order.orderDate)}</span>
                   </div>
 
                   <div className="order-info-item">
@@ -168,9 +167,9 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
                       <Package size={14} />
                       Estado
                     </span>
-                    <span className={`order-info-status ${orderInfo.status.toLowerCase().replace(" ", "-")}`}>
-                      {getStatusIcon(orderInfo.status)}
-                      {getStatusText(orderInfo.status)}
+                    <span className={`order-info-status ${order.status.toLowerCase().replace(" ", "-")}`}>
+                      {getStatusIcon(order.status)}
+                      {getStatusText(order.status)}
                     </span>
                   </div>
 
@@ -179,32 +178,10 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
                       <MapPin size={14} />
                       Dirección de entrega
                     </span>
-                    <span className="order-info-value">{orderInfo.deliveryAddress}</span>
+                    <span className="order-info-value">{order.deliveryAddress}</span>
                   </div>
 
-                  <div className="order-info-item">
-                    <span className="order-info-label">
-                      <CreditCard size={14} />
-                      Método de pago
-                    </span>
-                    <span className="order-info-value">{orderInfo.paymentMethod}</span>
-                  </div>
 
-                  {orderInfo.status === "Pending" && (
-                    <div className="order-info-item">
-                      <span className="order-info-label">
-                        <Truck size={14} />
-                        Entrega estimada
-                      </span>
-                      <span className="order-info-value">
-                        {new Date(orderInfo.estimatedDelivery).toLocaleDateString("es-ES", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -260,6 +237,19 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ orderId, onClose 
                     Total
                   </span>
                   <span className="order-total-value order-total-final">${getTotalAmount().toFixed(2)}</span>
+                </div>
+              </div>
+              <div className="order-info-section">
+                <h3 className="order-section-title-m">
+                  <Locate size={20} />
+                  Lugar de entrega
+                </h3>
+                <div className="map">
+                  <MapsDeliveryPerson
+                    startCoordinates={order.StartCoordinates || ","}
+                    deliveryCoordinates={order.DeliveryCoordinates || ","}
+                    orderstatus={order.status}
+                  />
                 </div>
               </div>
             </>

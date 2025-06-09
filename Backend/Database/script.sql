@@ -241,6 +241,34 @@ AS BEGIN SET NOCOUNT ON;
     AND O.Status = 'En camino'
   ORDER BY O.OrderDate ASC;
 END;
+CREATE OR ALTER PROCEDURE GetCompletedAndCancelledOrdersForDelivery  
+  @DeliveryId INT  
+AS  
+BEGIN  
+  SET NOCOUNT ON;  
+  
+  SELECT  
+    O.OrderId,  
+    O.OrderDate,  
+    O.DeliveryAddressName,  
+    O.DeliveryAddress,
+    CONCAT(O.DeliveryLatitude, ', ', O.DeliveryLongitude) AS DeliveryCoordinates,
+    CONCAT(O.StartRouteLatitude, ', ', O.StartRouteLongitude) AS StartCoordinates,
+    U.Name AS ClientName,  
+    C.Phone AS ClientPhone,  
+    O.Status,  
+    O.Total,  
+    O.DiscountedTotal,  
+    O.IsRouteStarted 
+  FROM ORDERS O  
+  INNER JOIN CLIENTS C ON O.ClientId = C.ClientId  
+  INNER JOIN USERS U ON C.UserId = U.UserId  
+  WHERE O.DeliveryId = @DeliveryId  
+    AND O.Status IN ('Completada', 'Cancelada')  
+  ORDER BY O.OrderDate DESC;  
+END;  
+
+
 
 CREATE OR ALTER PROCEDURE MarkOrderAsCompleted
   @OrderId INT
@@ -439,6 +467,9 @@ BEGIN
         O.OrderDate,
         O.Status,
         P.ProductId,
+        O.DeliveryAddress,
+        CONCAT(O.DeliveryLatitude, ', ', O.DeliveryLongitude) AS DeliveryCoordinates,
+    CONCAT(O.StartRouteLatitude, ', ', O.StartRouteLongitude) AS StartCoordinates,
         P.Name AS ProductName,
         CI.Quantity,
         CI.Price,
@@ -450,7 +481,6 @@ BEGIN
     WHERE O.ClientId = @ClientId
     ORDER BY O.OrderDate DESC;
 END;
-
 
 
 CREATE OR ALTER PROCEDURE AddProductToCart
@@ -597,7 +627,6 @@ BEGIN
     JOIN PRODUCTS P ON P.ProductId = OD.ProductId
     WHERE OD.OrderId = @OrderId;
 END;
-
 
 CREATE PROCEDURE AssignDelivery
   @OrderId INT,

@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import './maps-delivery-person.css';
-
+import { useAuth } from "../../context/Authcontext";
 interface Props {
-  startCoordinates: string;    
-  deliveryCoordinates: string; 
+  startCoordinates: string;
+  deliveryCoordinates: string;
+  orderstatus: string;
 }
 
 function parseCoordinates(coordStr: string): { lat: number; lng: number } | null {
@@ -19,7 +20,8 @@ function parseCoordinates(coordStr: string): { lat: number; lng: number } | null
   return { lat, lng };
 }
 
-export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinates }: Props) {
+export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinates, orderstatus }: Props) {
+  const { user } = useAuth();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
@@ -32,93 +34,96 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
   const delivery = parseCoordinates(deliveryCoordinates);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!mapRef.current || mapInstanceRef.current || !start) return;
+    if (!mapRef.current || mapInstanceRef.current || !delivery) return;
 
-      const map = new maplibregl.Map({
-        container: mapRef.current,
-        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-        center: [start.lng, start.lat],
-        zoom: 14,
-        pitch: 0,
-        bearing: 0,
-        interactive: true,
-      });
+    const center: [number, number] = delivery
+      ? [delivery.lng, delivery.lat]
+      : [0, 0]; 
 
-      mapInstanceRef.current = map;
+    const map = new maplibregl.Map({
+      container: mapRef.current,
+      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      center,
+      zoom: 14,
+      pitch: 0,
+      bearing: 0,
+      interactive: true,
+    });
 
-      // Marcadores inicio y destino
-      new maplibregl.Marker({ color: "#3498db" })
-        .setLngLat([start.lng, start.lat])
-        .setPopup(new maplibregl.Popup().setText("Inicio"))
-        .addTo(map);
+    mapInstanceRef.current = map;
 
-      if (delivery) {
-        new maplibregl.Marker({ color: "#2ecc71" })
-          .setLngLat([delivery.lng, delivery.lat])
-          .setPopup(new maplibregl.Popup().setText("Destino"))
-          .addTo(map);
-      }
+    // Solo marcador de destino inicial
+    new maplibregl.Marker({ color: "#2ecc71" })
+      .setLngLat([delivery.lng, delivery.lat])
+      .setPopup(new maplibregl.Popup().setText("Destino"))
+      .addTo(map);
 
-      // Dibujar ruta inicial y guardar distancia y duración
-      if (start && delivery) {
-        fetch(
-          `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
-        )
-          .then((res) => res.json())
-          .then((data) => {
-            const route = data.routes?.[0];
-            if (!route) return;
+    return () => {
+      map.remove();
+      mapInstanceRef.current = null;
+    };
+  }, [delivery]);
 
-            setDistanceKm(route.distance / 1000); // metros a km
-            setDurationMin(route.duration / 60); // segundos a minutos
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !start || !delivery) return;
 
-            const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
-              type: "Feature",
-              geometry: route.geometry,
-              properties: {},
-            };
+    new maplibregl.Marker({ color: "#3498db" })
+      .setLngLat([start.lng, start.lat])
+      .setPopup(new maplibregl.Popup().setText("Inicio"))
+      .addTo(map);
 
-            if (map.getSource("initialRoute")) {
-              (map.getSource("initialRoute") as any).setData(geojson);
-            } else {
-              map.addSource("initialRoute", {
-                type: "geojson",
-                data: geojson,
-              });
+    fetch(
+      `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${delivery.lng},${delivery.lat}?overview=full&geometries=geojson`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const route = data.routes?.[0];
+        if (!route) return;
 
-              map.addLayer({
-                id: "initialRoute",
-                type: "line",
-                source: "initialRoute",
-                layout: {
-                  "line-cap": "round",
-                  "line-join": "round",
-                },
-                paint: {
-                  "line-color": "#3498db",
-                  "line-width": 4,
-                },
-              });
-            }
+        setDistanceKm(route.distance / 1000);
+        setDurationMin(route.duration / 60);
 
-            const bounds = route.geometry.coordinates.reduce(
-              (bounds: maplibregl.LngLatBounds, coord: [number, number]) =>
-                bounds.extend(coord),
-              new maplibregl.LngLatBounds(route.geometry.coordinates[0], route.geometry.coordinates[0])
-            );
-            map.fitBounds(bounds, { padding: 60 });
-          })
-          .catch((e) => console.error("Error cargando ruta inicial:", e));
-      }
+        const geojson: GeoJSON.Feature<GeoJSON.Geometry> = {
+          type: "Feature",
+          geometry: route.geometry,
+          properties: {},
+        };
 
-      return () => {
-        map.remove();
-        mapInstanceRef.current = null;
-      };
-    }, 300);
+        if (map.getSource("initialRoute")) {
+          (map.getSource("initialRoute") as any).setData(geojson);
+        } else {
+          map.addSource("initialRoute", {
+            type: "geojson",
+            data: geojson,
+          });
 
-    return () => clearTimeout(timeout);
+          map.addLayer({
+            id: "initialRoute",
+            type: "line",
+            source: "initialRoute",
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#3498db",
+              "line-width": 4,
+            },
+          });
+        }
+
+        const bounds = route.geometry.coordinates.reduce(
+          (bounds: maplibregl.LngLatBounds, coord: [number, number]) =>
+            bounds.extend(coord),
+          new maplibregl.LngLatBounds(
+            route.geometry.coordinates[0],
+            route.geometry.coordinates[0]
+          )
+        );
+        map.fitBounds(bounds, { padding: 60 });
+      })
+      .catch((e) => console.error("Error cargando ruta:", e));
   }, [start, delivery]);
 
   function getBearing(start: { lat: number; lng: number }, end: { lat: number; lng: number }) {
@@ -236,13 +241,13 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
     return () => clearInterval(interval);
   }, [routeStarted]);
 
-  if (!start || !delivery) {
+  if (!delivery) {
     return <div>⚠️ Coordenadas inválidas</div>;
   }
 
   return (
     <>
-    
+
       <div
         ref={mapRef}
         style={{
@@ -253,41 +258,52 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
           marginBottom: "10px",
         }}
       />
-      {(distanceKm !== null && durationMin !== null) && (
+      {(user?.rol ==='Client' && orderstatus === "Pending") && (
+        <div
+          className="route-info"
+        >
+          Su pedido aun no ha sido aceptado
+        </div>
+      )}
+      {(distanceKm !== null && durationMin !== null && orderstatus === "En camino") && (
         <div
           className="route-info"
         >
           Distancia: {distanceKm.toFixed(2)} km &nbsp;|&nbsp; Tiempo estimado: {durationMin.toFixed(0)} min
         </div>
       )}
-      <button
-        onClick={() => {
-          setRouteStarted(true);
-          const map = mapInstanceRef.current;
-          if (!map) return;
-
-          if (map.getLayer("initialRoute")) {
-            map.removeLayer("initialRoute");
-          }
-          if (map.getSource("initialRoute")) {
-            map.removeSource("initialRoute");
-          }
-        }}
-        style={{
-          padding: "10px 15px",
-          backgroundColor: routeStarted ? "gray" : "#e74c3c",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-          cursor: routeStarted ? "not-allowed" : "pointer",
-          marginBottom: "10px",
-        }}
-        disabled={routeStarted}
-      >
-        {routeStarted ? "Ruta iniciada" : "Iniciar ruta"}
-      </button>
-
       
+      {(orderstatus === "En camino" && start && user?.rol==='Delivery' ) && (
+        <button
+          onClick={() => {
+            setRouteStarted(true);
+            const map = mapInstanceRef.current;
+            if (!map) return;
+
+            if (map.getLayer("initialRoute")) {
+              map.removeLayer("initialRoute");
+            }
+            if (map.getSource("initialRoute")) {
+              map.removeSource("initialRoute");
+            }
+          }}
+          style={{
+            padding: "10px 15px",
+            backgroundColor: routeStarted ? "gray" : "#e74c3c",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            cursor: routeStarted ? "not-allowed" : "pointer",
+            marginBottom: "10px",
+          }}
+          disabled={routeStarted}
+        >
+          {routeStarted ? "Ruta iniciada" : "Iniciar ruta"}
+        </button>
+      )}
+
+
+
     </>
   );
 }
