@@ -14,7 +14,6 @@ import CheckoutPage from "./Pages/Client/Payment/CheckoutPage"
 import HomeDistributor from "./Pages/Distributor/HomeDistributor"
 import ClientDistributor from "./Pages/Distributor/ClientDistributor"
 import DeliveryDistributor from "./Pages/Distributor/DeliveryDistributor/DeliveryPersonDistributors"
-import HistoryDistributor from "./Pages/Distributor/HistoryDistributor"
 import OrdersDistributor from "./Pages/Distributor/Orders/OrdersDistributor"
 import ProductsDistributor from "./Pages/Distributor/ProductsDistributor/ProductsDistributor"
 
@@ -47,7 +46,6 @@ function App() {
           <Route path="clients" element={<ClientDistributor />} />
           <Route path="delivery" element={<DeliveryDistributor />} />
           <Route path="products" element={<ProductsDistributor />} />
-          <Route path="history" element={<HistoryDistributor />} />
         </Route>
         <Route path="/dashboard-delivery" element={<DeliveryDashboard />}>
           <Route index element={<HomeDeliveryPerson />} />
