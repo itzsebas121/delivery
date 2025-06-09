@@ -186,6 +186,155 @@ GO
 
 
 
+CREATE OR ALTER PROCEDURE GetTotalVentasConCrecimiento
+    @FechaInicio DATETIME = NULL,
+    @FechaFin DATETIME = NULL,
+    @ClientId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF @FechaInicio IS NULL OR @FechaFin IS NULL
+    BEGIN
+        DECLARE @Hoy DATETIME = DATEADD(DAY, 1,CAST(GETDATE() AS DATE ));
+        SET @FechaFin = @Hoy;
+        SET @FechaInicio = DATEADD(DAY, 1 - DAY(@Hoy), @Hoy);
+    END
+
+    DECLARE @Dias INT = DATEDIFF(DAY, @FechaInicio, @FechaFin) + 1;
+
+    -- Calcular rango anterior basado en la duración
+    DECLARE @PeriodoAnteriorInicio DATETIME = DATEADD(DAY, -@Dias, @FechaInicio);
+    DECLARE @PeriodoAnteriorFin DATETIME = DATEADD(DAY, -1, @FechaInicio);
+
+    DECLARE @VentasActual FLOAT;
+    DECLARE @VentasAnterior FLOAT;
+
+    -- Ventas en rango actual (solo completadas)
+    SELECT @VentasActual = SUM(Total)
+    FROM ORDERS
+    WHERE (@ClientId IS NULL OR ClientId = @ClientId)
+        AND OrderDate BETWEEN @FechaInicio AND @FechaFin
+        AND Status = 'Completada';
+
+    -- Ventas en rango anterior (solo completadas)
+    SELECT @VentasAnterior = SUM(Total)
+    FROM ORDERS
+    WHERE (@ClientId IS NULL OR ClientId = @ClientId)
+        AND OrderDate BETWEEN @PeriodoAnteriorInicio AND @PeriodoAnteriorFin
+        AND Status = 'Completada';
+
+    -- Resultado con porcentaje de crecimiento
+    SELECT
+        @FechaInicio AS FechaInicioActual,
+        @FechaFin AS FechaFinActual,
+        @PeriodoAnteriorInicio AS FechaInicioAnterior,
+        @PeriodoAnteriorFin AS FechaFinAnterior,
+        ISNULL(@VentasActual, 0) AS VentasActual,
+        ISNULL(@VentasAnterior, 0) AS VentasPeriodoAnterior,
+        CASE 
+            WHEN @VentasAnterior IS NULL OR @VentasAnterior = 0 THEN 0
+            ELSE ROUND((@VentasActual - @VentasAnterior) * 100.0 / @VentasAnterior, 2)
+        END AS PorcentajeCrecimiento;
+END
+GO
+CREATE OR ALTER PROCEDURE GetClientesFrecuentes
+    @FechaInicio DATETIME = NULL,
+    @FechaFin DATETIME = NULL,
+    @ClientId INT = NULL
+AS
+BEGIN
+    SELECT TOP 5
+        c.ClientId,
+        u.Name,
+        COUNT(o.OrderId) AS NumeroCompras,
+        SUM(o.Total) AS MontoTotal,
+        AVG(o.Total) AS PromedioCompra
+    FROM ORDERS o
+    INNER JOIN CLIENTS c ON o.ClientId = c.ClientId
+    INNER JOIN USERS u ON c.UserId = u.UserId
+    WHERE
+        (@ClientId IS NULL OR c.ClientId = @ClientId)
+        AND (@FechaInicio IS NULL OR o.OrderDate >= @FechaInicio)
+        AND (@FechaFin IS NULL OR o.OrderDate <= @FechaFin)
+        AND o.Status = 'Completada'
+    GROUP BY c.ClientId, u.Name
+    ORDER BY NumeroCompras DESC, MontoTotal DESC;
+END
+GO
+CREATE OR ALTER PROCEDURE GetRepartidoresEficientes
+    @FechaInicio DATETIME = NULL,
+    @FechaFin DATETIME = NULL,
+    @ClientId INT = NULL
+AS
+BEGIN
+    WITH Repartos AS (
+        SELECT
+            dp.DeliveryId,
+            u.Name,
+            COUNT(o.OrderId) AS TotalAsignados,
+            SUM(CASE WHEN o.Status = 'Completada' THEN 1 ELSE 0 END) AS EntregasCompletadas
+        FROM ORDERS o
+        INNER JOIN DELIVERY_PERSONS dp ON o.DeliveryId = dp.DeliveryId
+        INNER JOIN USERS u ON dp.UserId = u.UserId
+        WHERE
+            (@ClientId IS NULL OR o.ClientId = @ClientId)
+            AND (@FechaInicio IS NULL OR o.OrderDate >= @FechaInicio)
+            AND (@FechaFin IS NULL OR o.OrderDate <= @FechaFin)
+        GROUP BY dp.DeliveryId, u.Name
+    )
+    SELECT TOP 5
+        DeliveryId,
+        Name,
+        TotalAsignados,
+        EntregasCompletadas,
+        CASE WHEN TotalAsignados = 0 THEN 0 ELSE ROUND(CAST(EntregasCompletadas AS FLOAT) * 100 / TotalAsignados, 2) END AS EficienciaPorcentaje
+    FROM Repartos
+    ORDER BY EficienciaPorcentaje DESC;
+END
+GO
+CREATE OR ALTER PROCEDURE GetTopProductosVentas
+    @FechaInicio DATETIME = NULL,
+    @FechaFin DATETIME = NULL,
+    @ClientId INT = NULL
+AS
+BEGIN
+    SELECT TOP 5
+        p.ProductId,
+        p.Name,
+        SUM(od.Quantity) AS CantidadVendida,
+        SUM(od.Quantity * od.UnitPrice) AS MontoTotalVentas
+    FROM ORDER_DETAILS od
+    INNER JOIN ORDERS o ON od.OrderId = o.OrderId
+    INNER JOIN PRODUCTS p ON od.ProductId = p.ProductId
+    WHERE 
+        (@ClientId IS NULL OR o.ClientId = @ClientId)
+        AND (@FechaInicio IS NULL OR o.OrderDate >= @FechaInicio)
+        AND (@FechaFin IS NULL OR o.OrderDate <= @FechaFin)
+    GROUP BY p.ProductId, p.Name
+    ORDER BY CantidadVendida DESC;
+END
+GO
+
+-- 1. Total ventas con crecimiento
+EXEC GetTotalVentasConCrecimiento
+    @FechaInicio = '2025-01-01',
+    @FechaFin = '2025-07-01',
+    @ClientId = NULL;  -- NULL para todos los clientes, o un ID específico
+
+-- 2. Clientes frecuentes
+EXEC GetClientesFrecuentes
+    @FechaInicio = '2025-01-01',
+    @FechaFin = '2025-07-01',
+    @ClientId = 2;
+
+-- 3. Repartidores eficientes
+EXEC GetRepartidoresEficientes
+    @FechaInicio = '2025-01-01',
+    @FechaFin = '2025-07-01',
+    @ClientId = NULL;
+
+
 
 
 

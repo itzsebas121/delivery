@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import "./NavbarClient.css"
+import {LogOut, Settings, User} from 'lucide-react'
 const NavbarDistributor = () => {
   const { isAuthenticated, logout, tipoUsuario } = useAuth()
   const navigate = useNavigate()
@@ -77,11 +78,7 @@ const NavbarDistributor = () => {
             Pedidos
           </Link>
         </li>
-       {/*  <li className="nav__item">
-          <Link to="clients" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Clientes
-          </Link>
-        </li> */}
+
         <li className="nav__item">
           <Link to="delivery" className="nav__link" onClick={() => setMenuOpen(false)}>
             Repartidores
@@ -92,12 +89,7 @@ const NavbarDistributor = () => {
             Productos
           </Link>
         </li>
-        <li className="nav__item">
-          <Link to="history" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Historial
-          </Link>
-        </li>
-        
+
         {isAuthenticated && tipoUsuario === "Distribuidor" && (
           <li className="nav__item">
             <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
@@ -130,19 +122,19 @@ const NavbarDistributor = () => {
               <ul className="nav__dropdown-menu">
                 <li className="nav__dropdown-item">
                   <Link to="/profile" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon">👤</span>
+                    <span className="nav__dropdown-icon"><User/></span>
                     Mi Perfil
                   </Link>
                 </li>
                 <li className="nav__dropdown-item">
                   <Link to="/settings" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon">⚙️</span>
+                    <span className="nav__dropdown-icon"><Settings/></span>
                     Configuración
                   </Link>
                 </li>
                 <li className="nav__dropdown-item nav__dropdown-item--danger">
                   <button onClick={handleLogout} className="nav__dropdown-button">
-                    <span className="nav__dropdown-icon">🚪</span>
+                    <span className="nav__dropdown-icon"><LogOut/></span>
                     Cerrar sesión
                   </button>
                 </li>

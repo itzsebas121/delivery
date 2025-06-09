@@ -765,6 +765,73 @@ app.get("/order-detail/:orderId", async (req, res) => {
     res.status(500).json({ message: "Error interno del servidor" });
   }
 });
+
+
+
+
+
+
+app.get("/analytics/total-ventas", async (req, res) => {
+  const { fechaInicio, fechaFin, clientId } = req.query;
+  try {
+    const result = await pool.request()
+      .input("FechaInicio", sql.DateTime, fechaInicio)
+      .input("FechaFin", sql.DateTime, fechaFin)
+      .input("ClientId", sql.Int, clientId || null)
+      .execute("GetTotalVentasConCrecimiento");
+    res.json(result.recordset[0]);
+  } catch (error) {
+    res.status(500).json({ message: "Error en total ventas", error });
+  }
+});
+
+// Endpoint 2: Clientes frecuentes
+app.get("/analytics/clientes-frecuentes", async (req, res) => {
+  const { fechaInicio, fechaFin, clientId } = req.query;
+  try {
+    const result = await pool.request()
+      .input("FechaInicio", sql.DateTime, fechaInicio)
+      .input("FechaFin", sql.DateTime, fechaFin)
+      .input("ClientId", sql.Int, clientId || null)
+      .execute("GetClientesFrecuentes");
+    res.json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ message: "Error en clientes frecuentes", error });
+  }
+});
+
+// Endpoint 3: Repartidores eficientes
+app.get("/analytics/repartidores-eficientes", async (req, res) => {
+  const { fechaInicio, fechaFin, clientId } = req.query;
+  try {
+    const result = await pool.request()
+      .input("FechaInicio", sql.DateTime, fechaInicio)
+      .input("FechaFin", sql.DateTime, fechaFin)
+      .input("ClientId", sql.Int, clientId || null)
+      .execute("GetRepartidoresEficientes");
+    res.json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ message: "Error en repartidores eficientes", error });
+  }
+});
+
+// Endpoint 4: Top productos ventas
+app.get("/analytics/top-productos", async (req, res) => {
+  const { fechaInicio, fechaFin, clientId } = req.query;
+  try {
+    const result = await pool.request()
+      .input("FechaInicio", sql.DateTime, fechaInicio)
+      .input("FechaFin", sql.DateTime, fechaFin)
+      .input("ClientId", sql.Int, clientId || null)
+      .execute("GetTopProductosVentas");
+    res.json(result.recordset);
+  } catch (error) {
+    res.status(500).json({ message: "Error en top productos", error });
+  }
+});
+
+
+
 // Cerrar conexiones cuando el proceso termine
 process.on("SIGINT", async () => {
   try {
