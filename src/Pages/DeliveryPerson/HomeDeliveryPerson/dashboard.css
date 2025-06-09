@@ -1,0 +1,854 @@
+.dd_dashboard_container {
+  min-height: 100vh;
+  background: var(--accent-cream);
+  padding: 16px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.dd_dashboard_header {
+  text-align: center;
+  margin-bottom: 24px;
+  animation: dd_fadeInDown 0.8s ease-out;
+}
+
+.dd_dashboard_title {
+  font-size: 2rem;
+  color: var(--primary-orange);
+  margin: 0;
+  text-shadow: var(--shadow-md);
+  font-weight: 700;
+}
+
+.dd_dashboard_subtitle {
+  color: var(--primary-orange);
+  font-size: 1rem;
+  margin: 8px 0 0 0;
+  opacity: 0.9;
+}
+
+/* Cards */
+.dd_card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 16px;
+  animation: dd_slideInUp 0.6s ease-out;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dd_card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.dd_card_title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  color: var(--dark-gray);
+  margin: 0;
+  font-weight: 600;
+}
+
+.dd_icon {
+  width: 20px;
+  height: 20px;
+  color: var(--primary-orange);
+}
+
+/* Stats Section - Más compactas */
+.dd_stats_section {
+  margin-bottom: 24px;
+}
+
+.dd_stats_grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dd_stat_card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow-lg);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: dd_slideInUp 0.6s ease-out;
+  position: relative;
+  overflow: hidden;
+  min-height: 80px;
+}
+
+.dd_stat_card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+.dd_stat_card_1::before {
+  background: var(--gradient-warm);
+}
+.dd_stat_card_2::before {
+  background: var(--accent-green);
+}
+.dd_stat_card_3::before {
+  background: var(--error);
+}
+.dd_stat_card_4::before {
+  background: var(--gradient-gold);
+}
+
+.dd_stat_card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-xl);
+}
+
+.dd_stat_icon_wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--light-gray);
+}
+
+.dd_stat_icon {
+  width: 20px;
+  height: 20px;
+  color: var(--primary-orange);
+}
+
+.dd_stat_content {
+  flex: 1;
+}
+
+.dd_stat_number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-orange);
+  margin: 0;
+  line-height: 1;
+}
+
+.dd_stat_label {
+  color: var(--medium-gray);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Filters Section */
+.dd_filters_section {
+  max-width: 1000px;
+  margin: 0 auto 24px auto;
+}
+
+.dd_filters_form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.dd_form_group {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd_form_group label {
+  color: var(--dark-gray);
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.dd_form_input {
+  padding: 10px 12px;
+  border: 2px solid var(--light-gray);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dd_form_input:focus {
+  outline: none;
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+}
+
+.dd_filter_buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.dd_filter_info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--medium-gray);
+  font-size: 0.8rem;
+  padding-top: 8px;
+  border-top: 1px solid var(--light-gray);
+}
+
+.dd_btn_refresh {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary-orange);
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.dd_btn_refresh:hover {
+  background: var(--light-gray);
+}
+
+.dd_refreshing {
+  animation: dd_spin 1s linear infinite;
+}
+
+.dd_btn_primary {
+  background: var(--gradient-warm);
+  color: var(--white);
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+
+.dd_btn_primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+}
+
+.dd_btn_secondary {
+  background: var(--white);
+  color: var(--medium-gray);
+  border: 2px solid var(--light-gray);
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dd_btn_secondary:hover {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+}
+
+/* Charts Section */
+.dd_charts_section {
+  margin-bottom: 24px;
+}
+
+.dd_charts_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dd_chart_card {
+  min-height: 350px;
+}
+
+.dd_chart_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.dd_chart_tabs {
+  display: flex;
+  border: 1px solid var(--light-gray);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dd_chart_tab {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dd_chart_tab.dd_active {
+  background: var(--primary-orange);
+  color: var(--white);
+}
+
+.dd_chart_controls {
+  display: flex;
+  border: 1px solid var(--light-gray);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dd_chart_control {
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dd_chart_control.dd_active {
+  background: var(--primary-orange);
+  color: var(--white);
+}
+
+.dd_chart_container {
+  height: 250px;
+  position: relative;
+  display: flex;
+}
+
+.dd_chart_y_axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 8px 30px 0;
+  width: 60px;
+}
+
+.dd_chart_y_label {
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  text-align: right;
+}
+
+/* Bar Chart */
+.dd_bar_chart {
+  display: flex;
+  align-items: end;
+  justify-content: space-around;
+  height: 200px;
+  padding: 10px 0 30px 0;
+  flex: 1;
+  position: relative;
+}
+
+.dd_bar_item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 50px;
+  cursor: pointer;
+  position: relative;
+}
+
+.dd_bar {
+  background: linear-gradient(to top, var(--primary-orange), var(--secondary-orange));
+  width: 24px;
+  min-height: 16px;
+  border-radius: 3px 3px 0 0;
+  position: relative;
+  animation: dd_growUp 0.8s ease-out;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dd_bar_item:hover .dd_bar {
+  background: linear-gradient(to top, var(--primary-red), var(--secondary-orange));
+  transform: scaleX(1.1);
+}
+
+.dd_bar_value {
+  color: var(--white);
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dd_bar_item:hover .dd_bar_value {
+  opacity: 1;
+}
+
+.dd_bar_label {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  text-align: center;
+}
+
+/* Line Chart */
+.dd_line_chart {
+  position: relative;
+  height: 100%;
+  flex: 1;
+  padding: 0 0 30px 0;
+}
+
+.dd_line_svg {
+  width: 100%;
+  height: 150px;
+}
+
+.dd_line_path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dd_drawLine 2s ease-out forwards;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.2));
+}
+
+.dd_area_path {
+  opacity: 0;
+  animation: dd_fadeIn 1s ease-out 0.5s forwards;
+}
+
+.dd_line_point {
+  opacity: 0;
+  animation: dd_fadeInPoint 0.5s ease-out forwards;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dd_point_group:hover .dd_line_point {
+  r: 8;
+  stroke-width: 3;
+}
+
+.dd_line_point_hover {
+  cursor: pointer;
+}
+
+.dd_line_labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.dd_line_label {
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  text-align: center;
+  flex: 1;
+}
+
+/* Chart Tooltip */
+.dd_chart_tooltip {
+  position: absolute;
+  background: var(--white);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  z-index: 10;
+  min-width: 100px;
+  transform: translate(-50%, 0);
+  border-left: 3px solid var(--primary-orange);
+  animation: dd_fadeIn 0.2s ease-out;
+}
+
+.dd_chart_tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--white);
+}
+
+.dd_tooltip_title {
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  margin-bottom: 2px;
+}
+
+.dd_tooltip_value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-orange);
+}
+
+.dd_tooltip_date {
+  font-size: 0.7rem;
+  color: var(--medium-gray);
+  margin-top: 2px;
+}
+
+/* Orders Section */
+.dd_orders_section {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.dd_orders_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.dd_order_card {
+  background: var(--white);
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border-left: 4px solid var(--primary-orange);
+  animation: dd_slideInLeft 0.5s ease-out;
+  transition: all 0.2s ease;
+}
+
+.dd_order_card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dd_order_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dd_order_id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--primary-orange);
+  font-size: 0.9rem;
+}
+
+.dd_order_info {
+  margin-bottom: 12px;
+  y: 8px;
+}
+
+.dd_order_date,
+.dd_order_address {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--medium-gray);
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+.dd_order_address span {
+  line-height: 1.3;
+}
+
+.dd_order_footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dd_order_total {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--accent-green);
+  font-size: 1rem;
+}
+
+/* Status Badges */
+.dd_status_badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.dd_status_completed {
+  background-color: var(--accent-green);
+  color: var(--white);
+}
+
+.dd_status_in_progress {
+  background-color: var(--info);
+  color: var(--white);
+}
+
+.dd_status_cancelled {
+  background-color: var(--error);
+  color: var(--white);
+}
+
+.dd_status_default {
+  background-color: var(--medium-gray);
+  color: var(--white);
+}
+
+/* Loading & Error States */
+.dd_loading_spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  color: var(--primary-orange);
+}
+
+.dd_spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid var(--primary-orange);
+  border-radius: 50%;
+  animation: dd_spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.dd_error_message {
+  text-align: center;
+  color: var(--white);
+  padding: 32px;
+}
+
+.dd_error_message h2 {
+  color: var(--accent-cream);
+  margin-bottom: 8px;
+}
+
+.dd_btn_retry {
+  background: var(--white);
+  color: var(--primary-orange);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: transform 0.2s ease;
+}
+
+.dd_btn_retry:hover {
+  transform: translateY(-1px);
+}
+
+/* Animations */
+@keyframes dd_fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dd_slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dd_slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dd_growUp {
+  from {
+    height: 0;
+  }
+  to {
+    height: 100%;
+  }
+}
+
+@keyframes dd_drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dd_fadeInPoint {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dd_fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dd_spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .dd_stats_grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .dd_charts_grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dd_dashboard_container {
+    padding: 12px;
+  }
+
+  .dd_dashboard_title {
+    font-size: 1.6rem;
+  }
+
+  .dd_stats_grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .dd_stat_card {
+    padding: 12px;
+    min-height: 70px;
+  }
+
+  .dd_stat_number {
+    font-size: 1.2rem;
+  }
+
+  .dd_stat_label {
+    font-size: 0.7rem;
+  }
+
+  .dd_filters_form {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dd_filter_buttons {
+    justify-content: stretch;
+  }
+
+  .dd_filter_buttons button {
+    flex: 1;
+  }
+
+  .dd_orders_grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dd_card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dd_dashboard_title {
+    font-size: 1.4rem;
+  }
+
+  .dd_stats_grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .dd_stat_card {
+    padding: 10px;
+    min-height: 60px;
+    flex-direction: column;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .dd_stat_icon_wrapper {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dd_stat_icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dd_stat_number {
+    font-size: 1rem;
+  }
+
+  .dd_stat_label {
+    font-size: 0.65rem;
+  }
+
+  .dd_order_card {
+    padding: 12px;
+  }
+
+  .dd_order_header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .dd_chart_header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

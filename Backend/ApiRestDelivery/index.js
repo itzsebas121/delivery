@@ -627,6 +627,36 @@ app.patch('/complete-order/:id', async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor.' });
   }
 });
+app.post("/dashboardDeliveryPerson/:userId", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { startDate, endDate } = req.body;
+
+    const request = pool.request().input("UserId", sql.Int, userId);
+
+    if (startDate) {
+      request.input("StartDate", sql.DateTime, new Date(startDate));
+    } else {
+      request.input("StartDate", sql.DateTime, null);
+    }
+
+    if (endDate) {
+      request.input("EndDate", sql.DateTime, new Date(endDate));
+    } else {
+      request.input("EndDate", sql.DateTime, null);
+    }
+
+    const result = await request.execute("sp_GetMyDeliveryStats");
+
+    res.json({
+      resumen: result.recordsets[0][0],
+      ordenes: result.recordsets[1],
+    });
+  } catch (error) {
+    console.error("Error al obtener estadísticas del delivery:", error);
+    res.status(500).json({ message: "Error al obtener el dashboard." });
+  }
+});
 
 
 

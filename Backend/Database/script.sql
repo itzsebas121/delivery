@@ -1155,3 +1155,50 @@ FROM
 INNER JOIN 
     CATEGORIES c ON p.CategoryId = c.CategoryId;
 GO
+CREATE OR ALTER PROCEDURE sp_GetMyDeliveryStats
+    @UserId INT,
+    @StartDate DATE = NULL,
+    @EndDate DATE = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @DeliveryId INT;
+
+    SELECT @DeliveryId = DeliveryId
+    FROM DELIVERY_PERSONS
+    WHERE UserId = @UserId;
+
+    IF @DeliveryId IS NULL
+    BEGIN
+        RAISERROR('No existe un repartidor asociado a este usuario.', 16, 1);
+        RETURN;
+    END;
+
+    -- Resumen
+    SELECT 
+        COUNT(*) AS TotalOrders,
+        COUNT(CASE WHEN Status = 'Completada' THEN 1 END) AS CompletedOrders,
+        COUNT(CASE WHEN Status IN ('Cancelada', 'Cancelled') THEN 1 END) AS FailedOrders,
+        ISNULL(SUM(DiscountedTotal), 0) AS TotalRevenue
+    FROM ORDERS
+    WHERE DeliveryId = @DeliveryId
+      AND (@StartDate IS NULL OR OrderDate >= @StartDate)
+      AND (@EndDate IS NULL OR OrderDate <= @EndDate);
+
+    -- Órdenes detalladas
+    SELECT 
+        o.OrderId,
+        o.OrderDate,
+        o.Status,
+        o.DiscountedTotal,
+        o.DeliveryAddress,
+        o.DeliveryAddressName,
+        o.DeliveryLatitude,
+        o.DeliveryLongitude
+    FROM ORDERS o
+    WHERE o.DeliveryId = @DeliveryId
+      AND (@StartDate IS NULL OR o.OrderDate >= @StartDate)
+      AND (@EndDate IS NULL OR o.OrderDate <= @EndDate)
+    ORDER BY o.OrderDate DESC;
+END;

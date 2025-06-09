@@ -11,7 +11,7 @@
   justify-content: center;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--accent-cream) 0%, var(--light-gray) 100%);
-  color: var(--medium-gray);
+  color: var(--primary-orange);
   text-align: center;
   gap: var(--spacing-md);
 }
@@ -323,6 +323,7 @@
 .empty-state p {
   font-size: var(--font-size-base);
   line-height: 1.5;
+  color: var(--primary-orange);
 }
 
 @media (max-width: 768px) {
