@@ -48,7 +48,6 @@ const OrderDetailsModal: React.FC<OrderDetailsModalProps> = ({ order, orderId, o
   const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     fetchOrderDetails()
-    alert(JSON.stringify(order))
   }, [orderId])
 
   const fetchOrderDetails = async () => {
