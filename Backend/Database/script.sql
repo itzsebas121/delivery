@@ -1139,6 +1139,93 @@ BEGIN
     WHERE o.OrderId = @OrderId;
 END;
 
+CREATE OR ALTER PROCEDURE sp_GetSuperAdminDashboardStats
+    @StartDate DATE = NULL,
+    @EndDate DATE = NULL,
+    @DeliveryId INT = NULL,
+    @ClientId INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1. CREAR TABLA TEMPORAL
+    CREATE TABLE #FilteredOrders (
+        OrderId INT,
+        ClientId INT,
+        DeliveryId INT,
+        OrderDate DATE,
+        DiscountedTotal DECIMAL(18,2),
+        Status VARCHAR(50)
+        -- agrega más columnas si las necesitás
+    );
+
+    -- 2. LLENARLA CON LOS FILTROS
+    INSERT INTO #FilteredOrders
+    SELECT OrderId, ClientId, DeliveryId, OrderDate, DiscountedTotal, Status
+    FROM ORDERS
+    WHERE 
+        (@StartDate IS NULL OR OrderDate >= @StartDate) AND
+        (@EndDate IS NULL OR OrderDate <= @EndDate) AND
+        (@DeliveryId IS NULL OR DeliveryId = @DeliveryId) AND
+        (@ClientId IS NULL OR ClientId = @ClientId);
+
+    -- 3. RESUMEN GENERAL
+    SELECT 
+        COUNT(*) AS TotalOrders,
+        COUNT(DISTINCT ClientId) AS TotalClients,
+        COUNT(DISTINCT DeliveryId) AS TotalDistributors,
+        ISNULL(SUM(DiscountedTotal), 0) AS TotalRevenue
+    FROM #FilteredOrders;
+
+    -- 4. TOP 5 PRODUCTOS MÁS VENDIDOS
+    SELECT TOP 5 
+        p.ProductId,
+        p.Name AS ProductName,
+        SUM(ci.Quantity) AS TotalSold,
+        SUM(ci.Quantity * ci.Price) AS TotalRevenue
+    FROM #FilteredOrders o
+    JOIN CLIENTS c ON c.ClientId = o.ClientId
+    JOIN Carts ca ON ca.ClientId = c.ClientId
+    JOIN CartItems ci ON ci.CartId = ca.CartId
+    JOIN PRODUCTs p ON p.ProductId = ci.ProductId
+    GROUP BY p.ProductId, p.Name
+    ORDER BY TotalSold DESC;
+
+    -- 5. TOP 5 DISTRIBUIDORES
+    SELECT TOP 5 
+        u.UserId,
+        u.Name AS DistributorName,
+        COUNT(*) AS CompletedDeliveries
+    FROM #FilteredOrders o
+    JOIN DELIVERY_PERSONS d ON d.DeliveryId = o.DeliveryId
+    JOIN USERS u ON u.UserId = d.UserId
+    WHERE o.Status = 'Completada'
+    GROUP BY u.UserId, u.Name
+    ORDER BY CompletedDeliveries DESC;
+
+    -- 6. TOP 5 CLIENTES
+    SELECT TOP 5 
+        u.UserId,
+        u.Name AS ClientName,
+        SUM(o.DiscountedTotal) AS TotalSpent
+    FROM #FilteredOrders o
+    JOIN CLIENTS c ON c.ClientId = o.ClientId
+    JOIN USERS u ON u.UserId = c.UserId
+    GROUP BY u.UserId, u.Name
+    ORDER BY TotalSpent DESC;
+
+    -- 7. INGRESOS POR DÍA
+    SELECT 
+        CAST(OrderDate AS DATE) AS OrderDay,
+        COUNT(*) AS OrdersCount,
+        SUM(DiscountedTotal) AS Revenue
+    FROM #FilteredOrders
+    GROUP BY CAST(OrderDate AS DATE)
+    ORDER BY OrderDay;
+
+    -- 8. LIMPIAR
+    DROP TABLE #FilteredOrders;
+END;
 
 CREATE  VIEW ProductWithCategory AS
 SELECT 

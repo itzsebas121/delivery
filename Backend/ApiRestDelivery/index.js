@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE",  'PATCH',],
+    methods: ["GET", "POST", "PUT", "DELETE", 'PATCH',],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -79,7 +79,7 @@ app.get("/products", async (req, res) => {
     const limitNum = parseInt(req.query.limit?.toString()) || 10;
     const name = req.query.name?.toString() || "";
     const category = req.query.category?.toString() || "";
-    const role = req.query.role?.toString() || "client"; 
+    const role = req.query.role?.toString() || "client";
 
     const offset = (pageNum - 1) * limitNum;
 
@@ -163,7 +163,7 @@ app.put("/products", async (req, res) => {
       .input("Stock", sql.Int, Stock)
       .input("ImageURL", sql.VarChar(255), ImageURL)
       .input("CategoryId", sql.Int, CategoryId);
-      
+
     await request.execute("UpdateProduct");
     res.status(200).json({ message: "Producto actualizado correctamente" });
 
@@ -179,7 +179,7 @@ app.delete("/products/:id", async (req, res) => {
     const request = pool.request()
       .input("ProductId", sql.Int, id);
 
-    const response= await request.execute("DeleteProduct");
+    const response = await request.execute("DeleteProduct");
 
     res.status(200).json(response.recordset[0]);
   } catch (err) {
@@ -312,7 +312,7 @@ app.get("/categories", async (req, res) => {
   try {
     const poolConnection = await pool.connect();
     const result = await poolConnection.request().execute("GetAllCategories");
-    
+
     res.json(result.recordset);
   } catch (err) {
     console.error("Error al obtener categorías:", err);
@@ -556,7 +556,7 @@ app.get("/delivery/:deliveryId/pending-orders", async (req, res) => {
     const result = await pool
       .request()
       .input("DeliveryId", sql.Int, deliveryId)
-      .execute("GetPendingOrdersForDelivery"); 
+      .execute("GetPendingOrdersForDelivery");
 
     res.json(result.recordset);
   } catch (error) {
@@ -655,6 +655,44 @@ app.post("/dashboardDeliveryPerson/:userId", async (req, res) => {
   } catch (error) {
     console.error("Error al obtener estadísticas del delivery:", error);
     res.status(500).json({ message: "Error al obtener el dashboard." });
+  }
+});
+
+app.post("/dashboardAdmin", async (req, res) => {
+  try {
+    const { startDate, endDate, clientId, deliveryId } = req.body;
+
+    const request = pool.request();
+
+    request.input("StartDate", sql.DateTime, startDate || null);
+    request.input("EndDate", sql.DateTime, endDate || null);
+    request.input("ClientId", sql.Int, clientId || null);
+    request.input("DeliveryId", sql.Int, deliveryId || null);
+
+    const result = await request.execute("sp_GetSuperAdminDashboardStats");
+
+    const [
+      summary,
+      topProducts,
+      topDeliveries,
+      topClients,
+      revenueByDay
+    ] = result.recordsets;
+
+    res.json({
+      success: true,
+      data: {
+        summary: summary[0],        // Una sola fila
+        topProducts,                // Arreglo de productos
+        topDeliveries,              // Arreglo de repartidores
+        topClients,                 // Arreglo de clientes
+        revenueByDay                // Arreglo de días con montos
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al obtener el dashboard admin:", error);
+    res.status(500).json({ success: false, message: "Error interno del servidor" });
   }
 });
 
