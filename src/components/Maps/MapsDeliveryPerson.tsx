@@ -3,7 +3,6 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import './maps-delivery-person.css';
 import { useAuth } from "../../context/Authcontext";
-import { Link } from "react-router-dom";
 interface Props {
   startCoordinates: string;
   deliveryCoordinates: string;
@@ -27,7 +26,7 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const currentPosRef = useRef<{ lat: number; lng: number } | null>(null);
-  const [routeStarted, setRouteStarted] = useState(false);
+  const [routeStarted] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
 
@@ -311,6 +310,9 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
         </button> 
 
       )}
+
+
+
     </>
   );
 }
