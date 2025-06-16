@@ -288,11 +288,20 @@ BEGIN
         Name,
         TotalAsignados,
         EntregasCompletadas,
-        CASE WHEN TotalAsignados = 0 THEN 0 ELSE ROUND(CAST(EntregasCompletadas AS FLOAT) * 100 / TotalAsignados, 2) END AS EficienciaPorcentaje
+        CASE 
+            WHEN TotalAsignados = 0 THEN 0 
+            ELSE ROUND(CAST(EntregasCompletadas AS FLOAT) * 100 / TotalAsignados, 2) 
+        END AS EficienciaPorcentaje
     FROM Repartos
-    ORDER BY EficienciaPorcentaje DESC;
+    ORDER BY 
+        CASE 
+            WHEN TotalAsignados = 0 THEN 0 
+            ELSE CAST(EntregasCompletadas AS FLOAT) * 100 / TotalAsignados 
+        END DESC,
+        EntregasCompletadas DESC;
 END
 GO
+
 CREATE OR ALTER PROCEDURE GetTopProductosVentas
     @FechaInicio DATETIME = NULL,
     @FechaFin DATETIME = NULL,

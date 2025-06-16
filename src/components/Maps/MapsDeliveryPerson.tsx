@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import './maps-delivery-person.css';
 import { useAuth } from "../../context/Authcontext";
+import { Link } from "react-router-dom";
 interface Props {
   startCoordinates: string;
   deliveryCoordinates: string;
@@ -38,7 +39,7 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
 
     const center: [number, number] = delivery
       ? [delivery.lng, delivery.lat]
-      : [0, 0]; 
+      : [0, 0];
 
     const map = new maplibregl.Map({
       container: mapRef.current,
@@ -244,7 +245,14 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
   if (!delivery) {
     return <div>⚠️ Coordenadas inválidas</div>;
   }
+  const handleDelivery = () => {
+    alert("Ruta iniciada, por favor sigue las instrucciones en Google Maps.");
 
+    window.open(
+      `https://www.google.com/maps/dir/${startCoordinates}/${deliveryCoordinates}?travelmode=driving&dir_action=navigate`,
+      '_blank'
+    );
+  }
   return (
     <>
 
@@ -258,7 +266,7 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
           marginBottom: "10px",
         }}
       />
-      {(user?.rol ==='Client' && orderstatus === "Pending") && (
+      {(user?.rol === 'Client' && orderstatus === "Pending") && (
         <div
           className="route-info"
         >
@@ -272,12 +280,12 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
           Distancia: {distanceKm.toFixed(2)} km &nbsp;|&nbsp; Tiempo estimado: {durationMin.toFixed(0)} min
         </div>
       )}
-      
-      {(orderstatus === "En camino" && start && user?.rol==='Delivery' ) && (
+
+      {(orderstatus === "En camino" && start && user?.rol === 'Delivery') && (
         <button
           onClick={() => {
-            setRouteStarted(true);
-            const map = mapInstanceRef.current;
+            /* setRouteStarted(true); */
+            /* const map = mapInstanceRef.current;
             if (!map) return;
 
             if (map.getLayer("initialRoute")) {
@@ -285,7 +293,8 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
             }
             if (map.getSource("initialRoute")) {
               map.removeSource("initialRoute");
-            }
+            } */
+           handleDelivery();
           }}
           style={{
             padding: "10px 15px",
@@ -299,11 +308,9 @@ export default function MapsDeliveryPerson({ startCoordinates, deliveryCoordinat
           disabled={routeStarted}
         >
           {routeStarted ? "Ruta iniciada" : "Iniciar ruta"}
-        </button>
+        </button> 
+
       )}
-
-
-
     </>
   );
 }
