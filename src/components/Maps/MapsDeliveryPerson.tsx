@@ -13,7 +13,6 @@ interface Props {
   deliveryCoordinates: string
   orderstatus: string
 }
-
 interface Coordinates {
   lat: number
   lng: number

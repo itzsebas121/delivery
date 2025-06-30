@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Cliente WebSocket</title>
+<style>
+  body { font-family: Arial; margin: 2rem; }
+  #log { background: #eee; height: 250px; overflow-y: auto; padding: 1rem; white-space: pre-wrap; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<h1>Cliente</h1>
+
+<p>ID de cliente: <strong id="clientIdDisplay"></strong></p>
+
+<h2>Mensajes recibidos</h2>
+<div id="log"></div>
+
+<script>
+  const clientId = "pepito";  
+  document.getElementById("clientIdDisplay").textContent = clientId;
+
+  const log = document.getElementById("log");
+
+  const ws = new WebSocket("ws://sockets-sigma.vercel.app");
+
+  ws.addEventListener("open", () => {
+    log.textContent += "Conectado al servidor\n";
+    ws.send(JSON.stringify({ type: "register", role: "client", userId: clientId }));
+  });
+
+  ws.addEventListener("message", async (event) => {
+    let data;
+    if (event.data instanceof Blob) {
+      data = await event.data.text();
+    } else {
+      data = event.data;
+    }
+    log.textContent += "Mensaje recibido: " + data + "\n";
+    log.scrollTop = log.scrollHeight;
+  });
+
+  ws.addEventListener("close", () => {
+    log.textContent += "Desconectado del servidor\n";
+  });
+
+  ws.addEventListener("error", () => {
+    log.textContent += "Error en conexión WebSocket\n";
+  });
+</script>
+
+</body>
+</html>
