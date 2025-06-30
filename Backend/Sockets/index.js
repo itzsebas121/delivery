@@ -1,69 +1,59 @@
 const WebSocket = require("ws");
+const clients = new Map();      
 
-const wss = new WebSocket.Server({ port: 3000 });
+const port = process.env.PORT || 3000;
+const wss = new WebSocket.Server({ port });
 
-let adminSocket = null;
-const clients = new Map();
+const distributors = new Set(); 
 
 wss.on("connection", (ws) => {
-  console.log("Cliente conectado");
-
-  ws.on("message", (message) => {
+  ws.on("message", (msg) => {
     try {
-      const data = JSON.parse(message);
+      const data = JSON.parse(msg);
 
       if (data.type === "register") {
-        if (data.role === "admin") {
-          adminSocket = ws;
-          console.log("Admin conectado");
-          ws.send(JSON.stringify({ type: "info", message: "Conectado como admin" }));
-        } else if (data.role === "client") {
-          ws.role = "client";
-          ws.userId = data.userId;
+        ws.role = data.role;
+        ws.userId = data.userId;
+
+        if (ws.role === "distributor") {
+          distributors.add(ws);
+        } else if (ws.role === "client") {
           clients.set(ws.userId, ws);
-          console.log(`Cliente conectado: ${ws.userId}`);
-          ws.send(JSON.stringify({ type: "info", message: `Conectado como cliente ${ws.userId}` }));
         }
+
         return;
       }
 
-      // Mensaje normal
-      if (ws === adminSocket) {
-        // El admin debe enviar mensajes así:
-        // { type: "message", to: "pepito", content: "Hola Pepito" }
-        if (data.type === "message" && data.to) {
-          const clientSocket = clients.get(data.to);
-          if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
-            clientSocket.send(JSON.stringify({
-              from: "admin",
-              content: data.content,
+      if (ws.role === "client") {
+        for (const dist of distributors) {
+          if (dist.readyState === WebSocket.OPEN) {
+            dist.send(JSON.stringify({
+              from: ws.userId,
+              contenido: data.contenido,
+              estado: data.estado
             }));
-          } else {
-            ws.send(JSON.stringify({ type: "error", message: `Cliente ${data.to} no conectado` }));
           }
         }
-      } else {
-        // Mensajes de cliente hacia admin (opcional)
-        if (adminSocket && adminSocket.readyState === WebSocket.OPEN) {
-          adminSocket.send(JSON.stringify({
-            from: ws.userId || "cliente",
-            content: data.content || message,
+      }
+
+      if (ws.role === "distributor" && data.toUserId) {
+        const clientSocket = clients.get(data.toUserId);
+        if (clientSocket && clientSocket.readyState === WebSocket.OPEN) {
+          clientSocket.send(JSON.stringify({
+            from: "distribuidor",
+            contenido: data.contenido,
+            estado: data.estado
           }));
         }
       }
-    } catch {
+
+    } catch (e) {
+      console.error("Error al procesar mensaje:", e.message);
     }
   });
 
   ws.on("close", () => {
-    if (ws === adminSocket) {
-      adminSocket = null;
-      console.log("Admin desconectado");
-    } else if (ws.role === "client") {
-      clients.delete(ws.userId);
-      console.log(`Cliente desconectado: ${ws.userId}`);
-    }
+    if (ws.role === "distributor") distributors.delete(ws);
+    if (ws.role === "client") clients.delete(ws.userId);
   });
 });
-
-console.log("Servidor WebSocket corriendo en ws://localhost:3000");

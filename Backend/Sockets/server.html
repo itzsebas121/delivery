@@ -1,72 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<title>Admin WebSocket</title>
-<style>
-  body { font-family: Arial; margin: 2rem; }
-  input, button { margin-bottom: 1rem; width: 300px; padding: 0.5rem; font-size: 1rem; }
-  #log { background: #eee; height: 200px; overflow-y: auto; padding: 1rem; white-space: pre-wrap; border: 1px solid #ccc; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Distribuidor</title>
+  <style>
+    body { font-family: Arial; margin: 2rem; }
+    input, button { margin-bottom: 1rem; width: 100%; padding: 0.5rem; font-size: 1rem; }
+    #log { background: #eee; height: 250px; overflow-y: auto; padding: 1rem; white-space: pre-wrap; border: 1px solid #ccc; }
+  </style>
 </head>
 <body>
 
-<h1>Admin</h1>
+<h1>Distribuidor</h1>
 
-<label for="targetUser">Enviar mensaje a usuario:</label>
-<input type="text" id="targetUser" placeholder="Ejemplo: pepito" />
+<input type="text" id="clienteId" placeholder="ID del cliente (ej: pepito)" />
+<input type="text" id="contenido" placeholder="Contenido del mensaje" />
+<input type="text" id="estado" placeholder="Estado del pedido" />
+<button onclick="enviar()">Enviar al cliente</button>
 
-<label for="msg">Mensaje:</label>
-<input type="text" id="msg" placeholder="Mensaje a enviar" />
-
-<button id="sendBtn">Enviar mensaje</button>
-
-<h2>Logs</h2>
+<h2>Mensajes recibidos</h2>
 <div id="log"></div>
 
 <script>
-  const log = document.getElementById("log");
-  const targetUserInput = document.getElementById("targetUser");
-  const msgInput = document.getElementById("msg");
-  const sendBtn = document.getElementById("sendBtn");
+  const userId = "distribuidor1";
+  const ws = new WebSocket("ws://localhost:3000");
 
-  const ws = new WebSocket("ws://sockets-sigma.vercel.app");
+  const log = document.getElementById("log");
 
   ws.addEventListener("open", () => {
-    log.textContent += "Conectado al servidor\n";
-    ws.send(JSON.stringify({ type: "register", role: "admin" }));
+    ws.send(JSON.stringify({ type: "register", role: "distributor", userId }));
+    log.textContent += "✅ Conectado como distribuidor\n";
   });
 
-  ws.addEventListener("message", async (event) => {
-    let data;
-    if (event.data instanceof Blob) {
-      data = await event.data.text();
-    } else {
-      data = event.data;
-    }
-    log.textContent += "Mensaje recibido: " + data + "\n";
+  ws.addEventListener("message", (event) => {
+    const msg = JSON.parse(event.data);
+    log.textContent += `📥 De ${msg.from}: ${msg.estado} - ${msg.contenido}\n`;
     log.scrollTop = log.scrollHeight;
   });
 
-  sendBtn.onclick = () => {
-    const userId = targetUserInput.value.trim();
-    const message = msgInput.value.trim();
-    if (!userId || !message) {
-      alert("Completa usuario y mensaje");
-      return;
-    }
-
-    const payload = {
-      type: "message",
-      to: userId,
-      content: message
-    };
-
-    ws.send(JSON.stringify(payload));
-    log.textContent += `Mensaje enviado a ${userId}: ${message}\n`;
-    targetUserInput.value = "";
-    msgInput.value = "";
-  };
+  function enviar() {
+    const toUserId = document.getElementById("clienteId").value.trim();
+    const contenido = document.getElementById("contenido").value;
+    const estado = document.getElementById("estado").value;
+    ws.send(JSON.stringify({ toUserId, contenido, estado }));
+  }
 </script>
 
 </body>
