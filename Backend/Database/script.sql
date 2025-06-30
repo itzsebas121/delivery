@@ -1240,6 +1240,7 @@ BEGIN
         C.ClientId,
         U.Name AS ClientName,
         U.Email AS ClientEmail,
+        U.UserId,
         D.Code AS DiscountCode,
         D.Percentage AS DiscountPercentage
     FROM ORDERS O

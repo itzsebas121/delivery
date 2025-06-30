@@ -1,4 +1,3 @@
-"use client"
 import { useState, useEffect } from "react"
 import { baseURLRest } from "../../../config"
 import AssignDeliveryModal from "./AssignDeliveryModal"
@@ -20,7 +19,7 @@ import {
 } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 import "./Orders.css"
-
+import { usePedidoWebSocket } from "../../../context/PedidoWebSocketProvider"
 interface Order {
   OrderId: number
   OrderDate: string
@@ -30,6 +29,7 @@ interface Order {
   DiscountedTotal: number
   ClientId: number
   ClientName: string
+  UserId: number
   ClientEmail: string
   DiscountCode: string | null
   DiscountPercentage: number | null
@@ -38,6 +38,7 @@ interface Order {
 type OrderStatus = "Pending" | "En camino" | "Completada" | "Cancelada"
 
 export default function OrdersDistributor() {
+  const { aceptarOrdenWS, cancelarOrdenWS } = usePedidoWebSocket()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [activeTab, setActiveTab] = useState<OrderStatus>("Pending")
@@ -90,7 +91,6 @@ export default function OrdersDistributor() {
       })
   }
 
-  // Get paginated orders for current tab
   const getPaginatedOrders = (status: OrderStatus) => {
     const filteredOrders = getFilteredOrders(status)
     const currentPage = getCurrentPage(status)
@@ -99,13 +99,11 @@ export default function OrdersDistributor() {
     return filteredOrders.slice(startIndex, endIndex)
   }
 
-  // Get total pages for current tab
   const getTotalPages = (status: OrderStatus) => {
     const filteredOrders = getFilteredOrders(status)
     return Math.ceil(filteredOrders.length / ordersPerPage)
   }
 
-  // Get current page for status
   const getCurrentPage = (status: OrderStatus) => {
     switch (status) {
       case "Pending":
@@ -121,7 +119,6 @@ export default function OrdersDistributor() {
     }
   }
 
-  // Set current page for status
   const setCurrentPage = (status: OrderStatus, page: number) => {
     switch (status) {
       case "Pending":
@@ -139,7 +136,6 @@ export default function OrdersDistributor() {
     }
   }
 
-  // Get status configuration
   const getStatusConfig = (status: OrderStatus) => {
     switch (status) {
       case "Pending":
@@ -153,7 +149,6 @@ export default function OrdersDistributor() {
     }
   }
 
-  // Get order counts
   const getOrderCounts = () => {
     return {
       Pending: getFilteredOrders("Pending").length,
@@ -166,14 +161,23 @@ export default function OrdersDistributor() {
   const handleCancelOrder = async (orderId: number) => {
     showConfirm("Cancelar orden", "¿Está seguro que desea cancelar esta orden?", async () => {
       try {
-        const response = await fetch(`${baseURLRest}/cancel-order/${orderId}`, {
-          method: "PATCH",
-        })
-        if (!response.ok) throw new Error("Error al cancelar la orden")
+         const response = await fetch(`${baseURLRest}/cancel-order/${orderId}`, {
+           method: "PATCH",
+         })
+         if (!response.ok) throw new Error("Error al cancelar la orden")
+  
+        setOrders((prevOrders) => {
+          return prevOrders.map((order) => {
+            if (order.OrderId === orderId) {
+              cancelarOrdenWS(order.UserId, "Su orden ha sido cancelada, por favor contacte con el administrador para más información")
+              console.log("Orden que coincide:", order);
+              return { ...order, Status: "Cancelada" };
+            }
+            return order;
+          });
+        });
 
-        setOrders((prevOrders) =>
-          prevOrders.map((order) => (order.OrderId === orderId ? { ...order, Status: "Cancelada" } : order)),
-        )
+
         showSuccess("Orden cancelada", "La orden ha sido cancelada exitosamente")
       } catch (err) {
         console.error("Error al cancelar la orden:", err)
@@ -189,9 +193,16 @@ export default function OrdersDistributor() {
 
   const handleDeliveryAssigned = () => {
     if (!selectedOrderId) return
-    setOrders((prevOrders) =>
-      prevOrders.map((order) => (order.OrderId === selectedOrderId ? { ...order, Status: "En camino" } : order)),
-    )
+    setOrders((prevOrders) => {
+          return prevOrders.map((order) => {
+            if (order.OrderId === selectedOrderId) {
+              aceptarOrdenWS(order.UserId, "Su orden ha sido aceptada, en breve recibirá su pedido")
+              console.log("Orden que coincide:", order);
+              return { ...order, Status: "En camino" };
+            }
+            return order;
+          });
+        });
     setShowAssignModal(false)
   }
 

@@ -1,12 +1,13 @@
 const WebSocket = require("ws");
-const clients = new Map();      
 
 const port = process.env.PORT || 3000;
 const wss = new WebSocket.Server({ port });
 
-const distributors = new Set(); 
+const clients = new Map();
+const distributors = new Set();
 
 wss.on("connection", (ws) => {
+
   ws.on("message", (msg) => {
     try {
       const data = JSON.parse(msg);
@@ -19,6 +20,7 @@ wss.on("connection", (ws) => {
           distributors.add(ws);
         } else if (ws.role === "client") {
           clients.set(ws.userId, ws);
+          console.log(`Client ${ws.userId} connected`);
         }
 
         return;
@@ -30,7 +32,8 @@ wss.on("connection", (ws) => {
             dist.send(JSON.stringify({
               from: ws.userId,
               contenido: data.contenido,
-              estado: data.estado
+              estado: data.estado,
+              icono: data.icono,
             }));
           }
         }
@@ -42,13 +45,20 @@ wss.on("connection", (ws) => {
           clientSocket.send(JSON.stringify({
             from: "distribuidor",
             contenido: data.contenido,
-            estado: data.estado
+            estado: data.estado,
+            icono: data.icono,
+          }));
+          console.log(`Mensaje enviado a ${data.toUserId}`);
+        } else {
+          ws.send(JSON.stringify({
+            type: "error",
+            message: `Cliente ${data.toUserId} no conectado`
           }));
         }
       }
 
     } catch (e) {
-      console.error("Error al procesar mensaje:", e.message);
+      console.error("❌ Error al procesar mensaje:", e.message);
     }
   });
 
@@ -57,3 +67,4 @@ wss.on("connection", (ws) => {
     if (ws.role === "client") clients.delete(ws.userId);
   });
 });
+

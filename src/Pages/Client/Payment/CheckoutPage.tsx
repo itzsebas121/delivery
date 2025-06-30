@@ -1,5 +1,3 @@
-"use client"
-
 import { useAuth } from "../../../context/Authcontext"
 import { useEffect, useState, Suspense, lazy } from "react"
 import { useNavigate } from "react-router-dom"
@@ -8,8 +6,8 @@ import { baseURLRest } from "../../../config"
 import PayPal from "./PayPal/Paypal"
 import LoadingSpinner from "../../../components/Loading/LoadingSpinner"
 import "./checkout-page.css"
+import { usePedidoWebSocket } from "../../../context/PedidoWebSocketProvider"
 
-// Lazy load del modal de mapa
 const MapModal = lazy(() => import("./Map/MapModal"))
 
 type CartItem = {
@@ -38,10 +36,9 @@ const CheckoutPage = () => {
   const [messageType, setMessageType] = useState<"success" | "error" | "warning">("success")
   const navigate = useNavigate()
   const clientID = user?.rol === "Client" && "clientId" in user ? (user as any).clientId : 1
-
-  // Agregar estados separados para coordenadas internas
   const [internalCoordinates, setInternalCoordinates] = useState<{ lat: number; lng: number } | null>(null)
   const [displayAddress, setDisplayAddress] = useState<string>("")
+  const { crearOrdenWS } = usePedidoWebSocket();
 
   useEffect(() => {
     async function fetchCart() {
@@ -147,9 +144,7 @@ const CheckoutPage = () => {
   }
 
   const handleMapSelection = (latitude: number, longitude: number, address: string) => {
-    // Guardar coordenadas internamente
     setInternalCoordinates({ lat: latitude, lng: longitude })
-    // Mostrar solo la dirección al usuario
     setDisplayAddress(address)
 
     setLocationData({
@@ -180,10 +175,10 @@ const CheckoutPage = () => {
     setMessage("Procesando orden después del pago exitoso...")
     setMessageType("success")
     try {
-     const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
+      const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartId, deliveryAddress:displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
+        body: JSON.stringify({ cartId, deliveryAddress: displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
       })
       if (!res.ok) throw new Error("Error al crear la orden")
       const result = await res.json()
@@ -224,21 +219,22 @@ const CheckoutPage = () => {
     }
 
     setLoading(true)
-    setMessage(null)
     try {
       const res = await fetch(`${baseURLRest}/create-order-from-cart`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartId, deliveryAddress:displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
+        body: JSON.stringify({ cartId, deliveryAddress: displayAddress, deliveryLatitude: internalCoordinates.lat, deliveryLongitude: internalCoordinates.lng }),
       })
       if (!res.ok) throw new Error("Error al crear la orden")
       const result = await res.json()
       setMessage(`¡Orden creada con éxito! ID: ${result.orderId}`)
       setMessageType("success")
+      crearOrdenWS(`El usuario ${user?.nombre} ha realizado una nueva compra de ${cartItems.length} productos con un total de $${cartItems.reduce((total, item) => total + item.Price * item.Quantity, 0).toFixed(2)}`)
       setTimeout(() => {
         setLoading(false)
         navigate("../history")
       }, 3000)
+
     } catch (error) {
       setLoading(false)
       setMessage("Error al procesar el pago")
