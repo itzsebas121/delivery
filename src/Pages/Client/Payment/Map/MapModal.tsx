@@ -40,7 +40,7 @@ const MapModal = ({ onLocationSelect, onClose }: MapModalProps) => {
 
     map.current = new mapLibre.Map({
       container: mapContainer.current,
-      style: "https://tiles.stadiamaps.com/styles/osm_bright.json",
+      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
       center: [-78.6197, -1.2543],
       zoom: 10,
     })
@@ -107,7 +107,7 @@ const MapModal = ({ onLocationSelect, onClose }: MapModalProps) => {
           <button onClick={onClose} className="map-modal-close">
             <X size={20} />
           </button>
-        </div>
+        </div>  
 
         <div className="map-modal-content">
           {isLoading && (
