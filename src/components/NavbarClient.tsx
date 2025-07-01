@@ -3,7 +3,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { ShoppingCart, User, Settings, LogOut, Home, Package, History, Phone, UserCheck } from "lucide-react"
+import { ShoppingCart, User, LogOut, Home, Package, History, UserCheck } from "lucide-react"
 import { useAuth } from "../context/Authcontext"
 import { useCart } from "../context/cart-context"
 import CartDropdownContent from "../Pages/Client/Cart/CartDropdownContext"
@@ -109,12 +109,7 @@ const NavbarClient = () => {
             Historial
           </Link>
         </li>
-        <li className="nav__item">
-          <Link to="contact" className="nav__link" onClick={() => setMenuOpen(false)}>
-            <Phone size={18} />
-            Contactos
-          </Link>
-        </li>
+        
         {isAuthenticated && tipoUsuario === "Distribuidor" && (
           <li className="nav__item">
             <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
@@ -170,18 +165,7 @@ const NavbarClient = () => {
             <div className="nav__dropdown">
               <div className="nav__dropdown-arrow"></div>
               <ul className="nav__dropdown-menu">
-                <li className="nav__dropdown-item">
-                  <Link to="/profile" className="nav__dropdown-link">
-                    <User size={16} className="nav__dropdown-icon" />
-                    Mi Perfil
-                  </Link>
-                </li>
-                <li className="nav__dropdown-item">
-                  <Link to="/settings" className="nav__dropdown-link">
-                    <Settings size={16} className="nav__dropdown-icon" />
-                    Configuración
-                  </Link>
-                </li>
+                
                 <li className="nav__dropdown-item nav__dropdown-item--danger">
                   <button onClick={handleLogout} className="nav__dropdown-button">
                     <LogOut size={16} className="nav__dropdown-icon" />

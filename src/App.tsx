@@ -7,7 +7,6 @@ import Product from "./Pages/Client/Components/Product"
 import NotFound from "./Pages/NotFound"
 import Registro from "./Pages/Login/Registro"
 import HomeClient from "./Pages/Client/HomeClient"
-import ContactClient from "./Pages/Client/ContactClient"
 import OrderHistory from "./Pages/Client/History/order-history"
 import CheckoutPage from "./Pages/Client/Payment/CheckoutPage"
 
@@ -33,7 +32,6 @@ function App() {
           <Route index element={<HomeClient />} />
           <Route path="home" element={<HomeClient />} />
           <Route path="products" element={<Product/>} />
-          <Route path="contact" element={<ContactClient />} />
           <Route path="history" element={<OrderHistory />} />
           <Route path="payment" element={<CheckoutPage />} />
         </Route>

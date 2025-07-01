@@ -1,6 +1,6 @@
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Mail, Lock, AlertCircle, Loader2 } from "lucide-react"
 import {jwtDecode} from "jwt-decode"
@@ -9,11 +9,10 @@ import { useAuth } from "../../context/Authcontext"
 import { useNavigate } from "react-router-dom"
 import { useAlert } from "../../components/Alerts/Alert-system"
 import "./Login.css"
-
 export default function Login() {
   const navigate = useNavigate()
   const {showError, showSuccess} = useAlert()
-  const { login } = useAuth()
+  const { login, user, loading} = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -87,7 +86,20 @@ export default function Login() {
       setIsLoading(false)
     }
   }
-
+  useEffect(() => {
+    if (user?.rol=== "Client") {
+      navigate("/dashboard-cliente")
+    }
+    if (user?.rol=== "Distributor") {
+      navigate("/dashboard-distribuidor")
+    }
+    if (user?.rol=== "Delivery") {
+      navigate("/dashboard-delivery")
+    }
+  }, [user])
+  if (loading) {
+    return <div>Cargando...</div>
+  }
   return (
     <div className="auth-container">
       <div className="auth-card">
