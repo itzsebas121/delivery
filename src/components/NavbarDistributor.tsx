@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import "./NavbarClient.css"
-import {LogOut, Settings, User} from 'lucide-react'
+import {LogOut} from 'lucide-react'
 const NavbarDistributor = () => {
-  const { isAuthenticated, logout, tipoUsuario } = useAuth()
+  const {  logout, tipoUsuario } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
@@ -90,20 +90,6 @@ const NavbarDistributor = () => {
           </Link>
         </li>
 
-        {isAuthenticated && tipoUsuario === "Distribuidor" && (
-          <li className="nav__item">
-            <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
-              Distribuidor
-            </Link>
-          </li>
-        )}
-        {isAuthenticated && tipoUsuario === "Cliente" && (
-          <li className="nav__item">
-            <Link to="/dashboard-cliente" className="nav__link" onClick={() => setMenuOpen(false)}>
-              Mi Cuenta
-            </Link>
-          </li>
-        )}
       </ul>
 
       <div className="nav__actions" ref={profileRef}>
@@ -120,18 +106,7 @@ const NavbarDistributor = () => {
             <div className="nav__dropdown">
               <div className="nav__dropdown-arrow"></div>
               <ul className="nav__dropdown-menu">
-                <li className="nav__dropdown-item">
-                  <Link to="/profile" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon"><User/></span>
-                    Mi Perfil
-                  </Link>
-                </li>
-                <li className="nav__dropdown-item">
-                  <Link to="/settings" className="nav__dropdown-link">
-                    <span className="nav__dropdown-icon"><Settings/></span>
-                    Configuración
-                  </Link>
-                </li>
+                
                 <li className="nav__dropdown-item nav__dropdown-item--danger">
                   <button onClick={handleLogout} className="nav__dropdown-button">
                     <span className="nav__dropdown-icon"><LogOut/></span>

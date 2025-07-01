@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import {
@@ -88,13 +86,11 @@ export default function HomeDistributor() {
   const [clientId, setClientId] = useState("")
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
 
-  // Data states
   const [totalVentas, setTotalVentas] = useState<TotalVentas | null>(null)
   const [clientesFrecuentes, setClientesFrecuentes] = useState<ClienteFrecuente[]>([])
   const [repartidoresEficientes, setRepartidoresEficientes] = useState<RepartidorEficiente[]>([])
   const [topProductos, setTopProductos] = useState<TopProducto[]>([])
 
-  // Loading states
   const [loading, setLoading] = useState<LoadingState>({
     ventas: false,
     clientes: false,
@@ -102,7 +98,6 @@ export default function HomeDistributor() {
     productos: false,
   })
 
-  // Tooltip states
   const [ventasTooltip, setVentasTooltip] = useState<TooltipState>({
     visible: false,
     x: 0,
@@ -137,8 +132,6 @@ export default function HomeDistributor() {
     y: 0,
     content: { title: "", value: "" },
   })
-
-  const [refreshing, setRefreshing] = useState(false)
 
   const ventasChartRef = useRef<HTMLDivElement>(null)
   const productosChartRef = useRef<HTMLDivElement>(null)
@@ -368,11 +361,6 @@ export default function HomeDistributor() {
     setTimeout(loadAllData, 100)
   }
 
-  const refreshData = () => {
-    setRefreshing(true)
-    loadAllData()
-    setTimeout(() => setRefreshing(false), 1000)
-  }
 
   const refreshVentas = () => {
     if (selectedClientId) {
@@ -610,14 +598,6 @@ export default function HomeDistributor() {
             {selectedClientId ? `Análisis para: ${getSelectedClientName()}` : "Reporte de ventas"}
           </p>
         </div>
-        <button
-          onClick={refreshData}
-          className={`hd_btn_refresh_main ${refreshing ? "hd_refreshing" : ""}`}
-          disabled={refreshing}
-        >
-          <RefreshCw size={16} />
-          {refreshing ? "Actualizando..." : "Actualizar Todo"}
-        </button>
       </header>
 
       {/* Filtros */}
