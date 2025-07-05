@@ -110,7 +110,6 @@
   color: var(--primary-orange);
 }
 
-/* Input wrapper */
 .input-wrapper {
   position: relative;
   display: flex;
@@ -143,6 +142,7 @@
 
 /* Inputs */
 .auth-form input[type="email"],
+.auth-form input[type="number"],
 .auth-form input[type="password"],
 .auth-form input[type="text"] {
   width: 100%;
