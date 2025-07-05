@@ -1386,7 +1386,7 @@ BEGIN
     DROP TABLE #FilteredOrders;
 END;
 
-CREATE  VIEW ProductWithCategory AS
+CREATE or alter VIEW ProductWithCategory AS
 SELECT 
     p.ProductId,
     p.Name AS ProductName,
@@ -1395,7 +1395,8 @@ SELECT
     p.Stock,
     p.ImageURL,
     p.isAvailable,
-    c.CategoryName
+    c.CategoryName,
+    c.CategoryId
 FROM 
     PRODUCTS p
 INNER JOIN 

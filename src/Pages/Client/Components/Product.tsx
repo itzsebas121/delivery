@@ -313,7 +313,6 @@ const Product = () => {
         )}
       </div>
 
-      {/* Paginación mejorada */}
       {!loadingp && totalPages > 1 && (
         <div className="pagination-section">
           <button className="pagination-btn nav-btn" onClick={() => handlePageChange(page - 1)} disabled={page === 1}>

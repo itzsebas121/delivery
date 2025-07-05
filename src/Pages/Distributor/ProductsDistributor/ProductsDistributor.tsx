@@ -1,5 +1,3 @@
-"use client"
-
 import React from "react"
 import type { ReactElement } from "react"
 import { useState, useEffect, useCallback } from "react"
@@ -19,6 +17,11 @@ import {
   PowerOff,
   CheckCircle,
   XCircle,
+  Grid,
+  List,
+  DollarSign,
+  Package2,
+  Tag,
 } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
 import "./Products.css"
@@ -56,7 +59,7 @@ const LazyImage = ({
   const [imageSrc, setImageSrc] = useState<string>(placeholder || "")
   const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [hasError, setHasError] = useState(false)
+  const [_hasError, setHasError] = useState(false)
 
   const imgCallbackRef = useCallback(
     (imgElement: HTMLImageElement | null) => {
@@ -64,21 +67,17 @@ const LazyImage = ({
         imageRef.onload = null
         imageRef.onerror = null
       }
-
       if (imgElement) {
         setImageRef(imgElement)
-
         if (src && src !== placeholder) {
           imgElement.onload = () => {
             setIsLoaded(true)
             setImageSrc(src)
           }
-
           imgElement.onerror = () => {
             setHasError(true)
-            setImageSrc(placeholder || "/placeholder.svg?height=40&width=40")
+            setImageSrc(placeholder || "/placeholder.svg?height=200&width=300")
           }
-
           const observer = new IntersectionObserver(
             (entries) => {
               entries.forEach((entry) => {
@@ -90,7 +89,6 @@ const LazyImage = ({
             },
             { threshold: 0.1 },
           )
-
           observer.observe(imgElement)
         }
       }
@@ -116,46 +114,68 @@ const LazyImage = ({
       .toUpperCase()
 
     return (
-      <div className={`image-placeholder ${className}`} style={{ backgroundColor: color }}>
-        <span className="placeholder-text">{initials}</span>
+      <div className={`image-placeholder-pdp ${className}`} style={{ backgroundColor: color }}>
+        <span className="placeholder-text-pdp">{initials}</span>
       </div>
     )
   }
 
-  if (hasError || !src) {
+  // Solo mostrar iniciales si no hay src o src es null/vacío
+  if (!src || src.trim() === "") {
     return generatePlaceholder()
   }
 
+  // Si hay error al cargar pero sí hay URL, mostrar imagen placeholder normal
   return (
     <img
       ref={imgCallbackRef}
       src={imageSrc || "/placeholder.svg"}
       alt={alt}
-      className={`${className} ${isLoaded ? "loaded" : "loading"}`}
+      className={`${className} ${isLoaded ? "loaded-pdp" : "loading-pdp"}`}
     />
   )
 }
 
-// Skeleton loader mejorado
+// Skeleton loader para cards
+const CardSkeleton = () => (
+  <div className="product-card-skeleton-pdp">
+    <div className="skeleton-image-pdp"></div>
+    <div className="skeleton-content-pdp">
+      <div className="skeleton-title-pdp"></div>
+      <div className="skeleton-description-pdp"></div>
+      <div className="skeleton-category-pdp"></div>
+      <div className="skeleton-stats-pdp">
+        <div className="skeleton-price-pdp"></div>
+        <div className="skeleton-stock-pdp"></div>
+      </div>
+      <div className="skeleton-actions-pdp">
+        <div className="skeleton-button-pdp"></div>
+        <div className="skeleton-button-pdp"></div>
+        <div className="skeleton-button-pdp"></div>
+      </div>
+    </div>
+  </div>
+)
+
+// Skeleton loader para tabla
 const TableSkeleton = () => (
-  <div className="table-skeleton">
+  <div className="table-skeleton-pdp">
     {Array.from({ length: 5 }).map((_, index) => (
-      <div key={index} className="skeleton-row">
-        <div className="skeleton-cell skeleton-id"></div>
-        <div className="skeleton-cell skeleton-product">
-          <div className="skeleton-image"></div>
-          <div className="skeleton-text"></div>
+      <div key={index} className="skeleton-row-pdp">
+        <div className="skeleton-cell-pdp skeleton-id-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-product-pdp">
+          <div className="skeleton-image-small-pdp"></div>
+          <div className="skeleton-text-pdp"></div>
         </div>
-        <div className="skeleton-cell skeleton-description"></div>
-        <div className="skeleton-cell skeleton-category"></div>
-        <div className="skeleton-cell skeleton-price"></div>
-        <div className="skeleton-cell skeleton-stock"></div>
-        <div className="skeleton-cell skeleton-status"></div>
-        <div className="skeleton-cell skeleton-actions">
-          <div className="skeleton-button"></div>
-          <div className="skeleton-button"></div>
-          <div className="skeleton-button"></div>
-          <div className="skeleton-button"></div>
+        <div className="skeleton-cell-pdp skeleton-description-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-category-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-price-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-stock-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-status-pdp"></div>
+        <div className="skeleton-cell-pdp skeleton-actions-pdp">
+          <div className="skeleton-button-small-pdp"></div>
+          <div className="skeleton-button-small-pdp"></div>
+          <div className="skeleton-button-small-pdp"></div>
         </div>
       </div>
     ))}
@@ -167,10 +187,11 @@ const ProductsDistributor = (): ReactElement => {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid")
 
   // Paginación mejorada
   const [page, setPage] = useState(1)
-  const [limit] = useState(10)
+  const [limit] = useState(12)
   const [totalProducts, setTotalProducts] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
@@ -208,10 +229,8 @@ const ProductsDistributor = (): ReactElement => {
         category: categoryFilter,
         role: "distributor",
       })
-
       const response = await fetch(`${baseURLRest}/products?${params}`)
       if (!response.ok) throw new Error("Error al cargar productos")
-
       const data: ProductsResponse = await response.json()
       setProducts(data.products)
       setTotalProducts(data.total)
@@ -238,16 +257,13 @@ const ProductsDistributor = (): ReactElement => {
   // Función para habilitar producto
   const handleEnableProduct = async (product: Product) => {
     if (!product.ProductId) return
-
     setActionLoading(product.ProductId)
     try {
       const response = await fetch(`${baseURLRest}/products/${product.ProductId}/enable`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
       })
-
       if (!response.ok) throw new Error("Error al habilitar producto")
-
       const data = await response.json()
       showSuccess("Producto habilitado", data.message || "El producto se ha habilitado correctamente")
       fetchProducts()
@@ -265,16 +281,13 @@ const ProductsDistributor = (): ReactElement => {
       `¿Estás seguro de que deseas deshabilitar "${product.ProductName}"?`,
       async () => {
         if (!product.ProductId) return
-
         setActionLoading(product.ProductId)
         try {
           const response = await fetch(`${baseURLRest}/products/${product.ProductId}/disable`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
           })
-
           if (!response.ok) throw new Error("Error al deshabilitar producto")
-
           const data = await response.json()
           showSuccess("Producto deshabilitado", data.message || "El producto se ha deshabilitado correctamente")
           fetchProducts()
@@ -302,9 +315,7 @@ const ProductsDistributor = (): ReactElement => {
           CategoryId: formData.CategoryId,
         }),
       })
-
       if (!response.ok) throw new Error("Error al crear producto")
-
       showSuccess("Producto creado", "El producto se ha creado exitosamente")
       closeModal()
       fetchProducts()
@@ -353,9 +364,7 @@ const ProductsDistributor = (): ReactElement => {
           CategoryId: formData.CategoryId,
         }),
       })
-
       if (!response.ok) throw new Error("Error al actualizar producto")
-
       showSuccess("Producto actualizado", "Los cambios se han guardado exitosamente")
       closeModal()
       fetchProducts()
@@ -370,7 +379,6 @@ const ProductsDistributor = (): ReactElement => {
         const response = await fetch(`${baseURLRest}/products/${product.ProductId}`, {
           method: "DELETE",
         })
-
         const data = await response.json()
         if (data.ERROR) {
           showError("Error al eliminar", data.ERROR)
@@ -387,7 +395,6 @@ const ProductsDistributor = (): ReactElement => {
   const openModal = (mode: "view" | "edit" | "create", product?: Product) => {
     setModalMode(mode)
     setSelectedProduct(product || null)
-
     if (product) {
       setFormData({
         ProductName: product.ProductName,
@@ -407,7 +414,6 @@ const ProductsDistributor = (): ReactElement => {
         CategoryId: 0,
       })
     }
-
     setShowModal(true)
   }
 
@@ -434,7 +440,6 @@ const ProductsDistributor = (): ReactElement => {
   const getPageNumbers = () => {
     const pages = []
     const maxVisiblePages = 5
-
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i)
@@ -462,7 +467,6 @@ const ProductsDistributor = (): ReactElement => {
         pages.push(totalPages)
       }
     }
-
     return pages
   }
 
@@ -472,31 +476,148 @@ const ProductsDistributor = (): ReactElement => {
     }
   }
 
+  // Componente de Card de Producto
+  const ProductCard = ({ product }: { product: Product }) => (
+    <div className={`product-card-pdp ${!product.isAvailable ? "product-disabled-pdp" : ""}`}>
+      <div className="product-image-container-pdp">
+        <LazyImage
+          src={product.ImageURL}
+          alt={product.ProductName}
+          className="product-image-pdp"
+          placeholder="/placeholder.svg?height=200&width=300"
+        />
+        <div className="product-status-overlay-pdp">
+          {product.isAvailable ? (
+            <span className="status-badge-pdp status-active-pdp">
+              <CheckCircle size={14} />
+              Activo
+            </span>
+          ) : (
+            <span className="status-badge-pdp status-inactive-pdp">
+              <XCircle size={14} />
+              Inactivo
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="product-content-pdp">
+        <div className="product-header-pdp">
+          <h3 className="product-name-pdp">{product.ProductName}</h3>
+          <span className="product-id-pdp">#{product.ProductId}</span>
+        </div>
+
+        <p className="product-description-pdp">{product.Description}</p>
+
+        <div className="product-category-pdp">
+          <Tag size={14} />
+          <span className="category-badge-pdp">{getCategoryName(product.CategoryId)}</span>
+        </div>
+
+        <div className="product-stats-pdp">
+          <div className="stat-item-pdp">
+            <DollarSign size={16} />
+            <span className="price-pdp">${product.Price.toFixed(2)}</span>
+          </div>
+          <div className="stat-item-pdp">
+            <Package2 size={16} />
+            <span className={`stock-pdp ${product.Stock < 10 ? "low-stock-pdp" : ""}`}>{product.Stock} unidades</span>
+          </div>
+        </div>
+
+        <div className="product-actions-pdp">
+          <button
+            className="btn-action-pdp btn-view-pdp"
+            onClick={() => openModal("view", product)}
+            title="Ver detalles"
+          >
+            <Eye size={16} />
+          </button>
+          <button className="btn-action-pdp btn-edit-pdp" onClick={() => openModal("edit", product)} title="Editar">
+            <Edit size={16} />
+          </button>
+          {product.isAvailable ? (
+            <button
+              className="btn-action-pdp btn-disable-pdp"
+              onClick={() => handleDisableProduct(product)}
+              title="Deshabilitar"
+              disabled={actionLoading === product.ProductId}
+            >
+              {actionLoading === product.ProductId ? (
+                <div className="loading-spinner-small-pdp"></div>
+              ) : (
+                <PowerOff size={16} />
+              )}
+            </button>
+          ) : (
+            <button
+              className="btn-action-pdp btn-enable-pdp"
+              onClick={() => handleEnableProduct(product)}
+              title="Habilitar"
+              disabled={actionLoading === product.ProductId}
+            >
+              {actionLoading === product.ProductId ? (
+                <div className="loading-spinner-small-pdp"></div>
+              ) : (
+                <Power size={16} />
+              )}
+            </button>
+          )}
+          <button
+            className="btn-action-pdp btn-delete-pdp"
+            onClick={() => handleDeleteProduct(product)}
+            title="Eliminar"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="products-admin">
+    <div className="products-admin-pdp">
       {/* Header mejorado */}
-      <div className="admin-header">
-        <div className="header-content">
-          <div className="header-info">
-            <div className="header-title">
-              <Package size={28} className="header-icon" />
+      <div className="admin-header-pdp">
+        <div className="header-content-pdp">
+          <div className="header-info-pdp">
+            <div className="header-title-pdp">
+              <Package size={28} className="header-icon-pdp" />
               <div>
                 <h1>Gestión de Productos</h1>
-                <span className="product-count">{totalProducts} productos en total</span>
+                <span className="product-count-pdp">{totalProducts} productos en total</span>
               </div>
             </div>
           </div>
-          <button className="btn-primary" onClick={() => openModal("create")}>
-            <Plus size={20} />
-            <span>Nuevo Producto</span>
-          </button>
+          <div className="header-actions-pdp">
+            <div className="view-toggle-pdp">
+              <button
+                className={`view-btn-pdp ${viewMode === "grid" ? "active-pdp" : ""}`}
+                onClick={() => setViewMode("grid")}
+                title="Vista de tarjetas"
+              >
+                <Grid size={18} />
+              </button>
+              <button
+                className={`view-btn-pdp ${viewMode === "table" ? "active-pdp" : ""}`}
+                onClick={() => setViewMode("table")}
+                title="Vista de tabla"
+              >
+                <List size={18} />
+              </button>
+            </div>
+            <button className="btn-primary-pdp" onClick={() => openModal("create")}>
+              <Plus size={20} />
+              <span>Nuevo Producto</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Filtros mejorados */}
-      <div className="filters-section">
-        <div className="filters-container">
-          <div className="search-filter">
+      <div className="filters-section-pdp">
+        <div className="filters-container-pdp">
+          <div className="search-filter-pdp">
             <Search size={18} />
             <input
               type="text"
@@ -508,8 +629,7 @@ const ProductsDistributor = (): ReactElement => {
               }}
             />
           </div>
-
-          <div className="category-filter">
+          <div className="category-filter-pdp">
             <Filter size={18} />
             <select
               value={categoryFilter}
@@ -526,10 +646,9 @@ const ProductsDistributor = (): ReactElement => {
               ))}
             </select>
           </div>
-
           {(nameFilter || categoryFilter) && (
             <button
-              className="btn-clear"
+              className="btn-clear-pdp"
               onClick={() => {
                 setNameFilter("")
                 setCategoryFilter("")
@@ -543,137 +662,151 @@ const ProductsDistributor = (): ReactElement => {
         </div>
       </div>
 
-      {/* Tabla mejorada */}
-      <div className="table-section">
+      {/* Contenido principal */}
+      <div className="content-section-pdp">
         {loading ? (
-          <TableSkeleton />
+          viewMode === "grid" ? (
+            <div className="products-grid-pdp">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <CardSkeleton key={index} />
+              ))}
+            </div>
+          ) : (
+            <TableSkeleton />
+          )
+        ) : viewMode === "grid" ? (
+          <div className="products-grid-pdp">
+            {products.map((product) => (
+              <ProductCard key={product.ProductId} product={product} />
+            ))}
+          </div>
         ) : (
-          <div className="table-container">
-            <table className="products-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Producto</th>
-                  <th className="hide-mobile">Descripción</th>
-                  <th>Categoría</th>
-                  <th>Precio</th>
-                  <th className="hide-mobile">Stock</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.ProductId} className={!product.isAvailable ? "product-disabled" : ""}>
-                    <td>
-                      <span className="product-id">#{product.ProductId}</span>
-                    </td>
-                    <td>
-                      <div className="product-info">
-                        <LazyImage
-                          src={product.ImageURL}
-                          alt={product.ProductName}
-                          className="product-thumb"
-                          placeholder="/placeholder.svg?height=40&width=40"
-                        />
-                        <div className="product-details">
-                          <span className="product-name">{product.ProductName}</span>
-                          <span className="product-mobile-info hide-desktop">
-                            ${product.Price.toFixed(2)} • Stock: {product.Stock}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="description-cell hide-mobile">{product.Description}</td>
-                    <td>
-                      <span className="category-badge">{getCategoryName(product.CategoryId)}</span>
-                    </td>
-                    <td className="price-cell hide-mobile">${product.Price.toFixed(2)}</td>
-                    <td className={`stock-cell hide-mobile ${product.Stock < 10 ? "low-stock" : ""}`}>
-                      {product.Stock}
-                    </td>
-                    <td>
-                      <div className="status-cell">
-                        {product.isAvailable ? (
-                          <span className="status-badge status-active">
-                            <CheckCircle size={14} />
-                            Activo
-                          </span>
-                        ) : (
-                          <span className="status-badge status-inactive">
-                            <XCircle size={14} />
-                            Inactivo
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="actions-cell">
-                        <button
-                          className="btn-action btn-view"
-                          onClick={() => openModal("view", product)}
-                          title="Ver detalles"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          className="btn-action btn-edit"
-                          onClick={() => openModal("edit", product)}
-                          title="Editar"
-                        >
-                          <Edit size={16} />
-                        </button>
-
-                        {product.isAvailable ? (
-                          <button
-                            className="btn-action btn-disable"
-                            onClick={() => handleDisableProduct(product)}
-                            title="Deshabilitar"
-                            disabled={actionLoading === product.ProductId}
-                          >
-                            {actionLoading === product.ProductId ? (
-                              <div className="loading-spinner-small"></div>
-                            ) : (
-                              <PowerOff size={16} />
-                            )}
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-action btn-enable"
-                            onClick={() => handleEnableProduct(product)}
-                            title="Habilitar"
-                            disabled={actionLoading === product.ProductId}
-                          >
-                            {actionLoading === product.ProductId ? (
-                              <div className="loading-spinner-small"></div>
-                            ) : (
-                              <Power size={16} />
-                            )}
-                          </button>
-                        )}
-
-                        <button
-                          className="btn-action btn-delete"
-                          onClick={() => handleDeleteProduct(product)}
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+          <div className="table-section-pdp">
+            <div className="table-container-pdp">
+              <table className="products-table-pdp">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Producto</th>
+                    <th className="hide-mobile-pdp">Descripción</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th className="hide-mobile-pdp">Stock</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {products.map((product) => (
+                    <tr key={product.ProductId} className={!product.isAvailable ? "product-disabled-pdp" : ""}>
+                      <td>
+                        <span className="product-id-table-pdp">#{product.ProductId}</span>
+                      </td>
+                      <td>
+                        <div className="product-info-table-pdp">
+                          <LazyImage
+                            src={product.ImageURL}
+                            alt={product.ProductName}
+                            className="product-thumb-pdp"
+                            placeholder="/placeholder.svg?height=40&width=40"
+                          />
+                          <div className="product-details-table-pdp">
+                            <span className="product-name-table-pdp">{product.ProductName}</span>
+                            <span className="product-mobile-info-pdp hide-desktop-pdp">
+                              ${product.Price.toFixed(2)} • Stock: {product.Stock}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="description-cell-pdp hide-mobile-pdp">{product.Description}</td>
+                      <td>
+                        <span className="category-badge-table-pdp">{getCategoryName(product.CategoryId)}</span>
+                      </td>
+                      <td className="price-cell-pdp hide-mobile-pdp">${product.Price.toFixed(2)}</td>
+                      <td className={`stock-cell-pdp hide-mobile-pdp ${product.Stock < 10 ? "low-stock-pdp" : ""}`}>
+                        {product.Stock}
+                      </td>
+                      <td>
+                        <div className="status-cell-pdp">
+                          {product.isAvailable ? (
+                            <span className="status-badge-pdp status-active-pdp">
+                              <CheckCircle size={14} />
+                              Activo
+                            </span>
+                          ) : (
+                            <span className="status-badge-pdp status-inactive-pdp">
+                              <XCircle size={14} />
+                              Inactivo
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="actions-cell-pdp">
+                          <button
+                            className="btn-action-pdp btn-view-pdp"
+                            onClick={() => openModal("view", product)}
+                            title="Ver detalles"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            className="btn-action-pdp btn-edit-pdp"
+                            onClick={() => openModal("edit", product)}
+                            title="Editar"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          {product.isAvailable ? (
+                            <button
+                              className="btn-action-pdp btn-disable-pdp"
+                              onClick={() => handleDisableProduct(product)}
+                              title="Deshabilitar"
+                              disabled={actionLoading === product.ProductId}
+                            >
+                              {actionLoading === product.ProductId ? (
+                                <div className="loading-spinner-small-pdp"></div>
+                              ) : (
+                                <PowerOff size={16} />
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              className="btn-action-pdp btn-enable-pdp"
+                              onClick={() => handleEnableProduct(product)}
+                              title="Habilitar"
+                              disabled={actionLoading === product.ProductId}
+                            >
+                              {actionLoading === product.ProductId ? (
+                                <div className="loading-spinner-small-pdp"></div>
+                              ) : (
+                                <Power size={16} />
+                              )}
+                            </button>
+                          )}
+                          <button
+                            className="btn-action-pdp btn-delete-pdp"
+                            onClick={() => handleDeleteProduct(product)}
+                            title="Eliminar"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {!loading && products.length === 0 && (
-          <div className="empty-state">
+          <div className="empty-state-pdp">
             <Package size={64} />
             <h3>No hay productos</h3>
             <p>No se encontraron productos con los filtros seleccionados</p>
-            <button className="btn-primary" onClick={() => openModal("create")}>
+            <button className="btn-primary-pdp" onClick={() => openModal("create")}>
               <Plus size={18} />
               Crear primer producto
             </button>
@@ -683,98 +816,93 @@ const ProductsDistributor = (): ReactElement => {
 
       {/* Paginación mejorada */}
       {!loading && totalPages > 1 && (
-        <div className="pagination-section">
-          <div className="pagination-controls">
-            <button
-              className="pagination-btn nav-btn"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              title="Página anterior"
-            >
-              <ChevronLeft size={18} />
-            </button>
-
-            <div className="page-numbers">
-              {getPageNumbers().map((pageNum, index) => (
-                <React.Fragment key={index}>
-                  {pageNum === "..." ? (
-                    <span className="page-ellipsis">...</span>
-                  ) : (
-                    <button
-                      className={`page-btn ${page === pageNum ? "active" : ""}`}
-                      onClick={() => handlePageChange(pageNum as number)}
-                    >
-                      {pageNum}
-                    </button>
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-
-            <button
-              className="pagination-btn nav-btn"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page === totalPages}
-              title="Página siguiente"
-            >
-              <ChevronRight size={18} />
-            </button>
+        <div className="pagination-section-pdp">
+          <button
+            className="pagination-btn-pdp nav-btn-pdp"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+            title="Página anterior"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="page-numbers-pdp">
+            {getPageNumbers().map((pageNum, index) => (
+              <React.Fragment key={index}>
+                {pageNum === "..." ? (
+                  <span className="page-ellipsis-pdp">...</span>
+                ) : (
+                  <button
+                    className={`page-btn-pdp ${page === pageNum ? "active-pdp" : ""}`}
+                    onClick={() => handlePageChange(pageNum as number)}
+                  >
+                    {pageNum}
+                  </button>
+                )}
+              </React.Fragment>
+            ))}
           </div>
+          <button
+            className="pagination-btn-pdp nav-btn-pdp"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+            title="Página siguiente"
+          >
+            <ChevronRight size={18} />
+          </button>
         </div>
       )}
 
       {/* Modal mejorado */}
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="modal-overlay-pdp" onClick={closeModal}>
+          <div className="modal-container-pdp" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-pdp">
               <h2>
                 {modalMode === "create" && "Crear Nuevo Producto"}
                 {modalMode === "edit" && "Editar Producto"}
                 {modalMode === "view" && "Detalles del Producto"}
               </h2>
-              <button className="modal-close" onClick={closeModal}>
+              <button className="modal-close-pdp" onClick={closeModal}>
                 <X size={24} />
               </button>
             </div>
-
-            <div className="modal-content">
+            <div className="modal-content-pdp">
               {modalMode === "view" ? (
-                <div className="product-details">
-                  <div className="detail-image">
+                <div className="product-details-pdp">
+                  <div className="detail-image-pdp">
                     <LazyImage
                       src={selectedProduct?.ImageURL || ""}
                       alt={selectedProduct?.ProductName || "Producto"}
-                      className="detail-img"
+                      className="detail-img-pdp"
                       placeholder="/placeholder.svg?height=200&width=300"
                     />
                     {selectedProduct?.isAvailable ? (
-                      <div className="detail-status status-active">
+                      <div className="detail-status-pdp status-active-pdp">
                         <CheckCircle size={16} />
                         Producto Activo
                       </div>
                     ) : (
-                      <div className="detail-status status-inactive">
+                      <div className="detail-status-pdp status-inactive-pdp">
                         <XCircle size={16} />
                         Producto Inactivo
                       </div>
                     )}
                   </div>
-                  <div className="detail-info">
+                  <div className="detail-info-pdp">
                     <h3>{selectedProduct?.ProductName}</h3>
-                    <p className="detail-description">{selectedProduct?.Description}</p>
-                    <div className="detail-grid">
-                      <div className="detail-item">
+                    <p className="detail-description-pdp">{selectedProduct?.Description}</p>
+                    <div className="detail-grid-pdp">
+                      <div className="detail-item-pdp">
                         <label>Categoría:</label>
-                        <span className="category-badge">{getCategoryName(selectedProduct?.CategoryId)}</span>
+                        <span className="category-badge-pdp">{getCategoryName(selectedProduct?.CategoryId)}</span>
                       </div>
-                      <div className="detail-item">
+                      <div className="detail-item-pdp">
                         <label>Precio:</label>
-                        <span className="price">${selectedProduct?.Price.toFixed(2)}</span>
+                        <span className="price-pdp">${selectedProduct?.Price.toFixed(2)}</span>
                       </div>
-                      <div className="detail-item">
+                      <div className="detail-item-pdp">
                         <label>Stock:</label>
-                        <span className={selectedProduct && selectedProduct.Stock < 10 ? "low-stock" : ""}>
+                        <span className={selectedProduct && selectedProduct.Stock < 10 ? "low-stock-pdp" : ""}>
                           {selectedProduct?.Stock} unidades
                         </span>
                       </div>
@@ -782,9 +910,9 @@ const ProductsDistributor = (): ReactElement => {
                   </div>
                 </div>
               ) : (
-                <form className="product-form">
-                  <div className="form-grid">
-                    <div className="form-group">
+                <form className="product-form-pdp">
+                  <div className="form-grid-pdp">
+                    <div className="form-group-pdp">
                       <label>Nombre del producto *</label>
                       <input
                         type="text"
@@ -795,8 +923,7 @@ const ProductsDistributor = (): ReactElement => {
                         required
                       />
                     </div>
-
-                    <div className="form-group">
+                    <div className="form-group-pdp">
                       <label>Categoría *</label>
                       <select name="CategoryId" value={formData.CategoryId} onChange={handleInputChange} required>
                         <option value={0}>Seleccionar categoría...</option>
@@ -807,8 +934,7 @@ const ProductsDistributor = (): ReactElement => {
                         ))}
                       </select>
                     </div>
-
-                    <div className="form-group full-width">
+                    <div className="form-group-pdp full-width-pdp">
                       <label>Descripción *</label>
                       <textarea
                         name="Description"
@@ -819,8 +945,7 @@ const ProductsDistributor = (): ReactElement => {
                         required
                       />
                     </div>
-
-                    <div className="form-group">
+                    <div className="form-group-pdp">
                       <label>Precio ($) *</label>
                       <input
                         type="number"
@@ -833,8 +958,7 @@ const ProductsDistributor = (): ReactElement => {
                         required
                       />
                     </div>
-
-                    <div className="form-group">
+                    <div className="form-group-pdp">
                       <label>Stock disponible *</label>
                       <input
                         type="number"
@@ -846,8 +970,7 @@ const ProductsDistributor = (): ReactElement => {
                         required
                       />
                     </div>
-
-                    <div className="form-group full-width">
+                    <div className="form-group-pdp full-width-pdp">
                       <label>URL de imagen *</label>
                       <input
                         type="url"
@@ -862,19 +985,18 @@ const ProductsDistributor = (): ReactElement => {
                 </form>
               )}
             </div>
-
-            <div className="modal-footer">
+            <div className="modal-footer-pdp">
               {modalMode === "view" ? (
-                <button className="btn-secondary" onClick={closeModal}>
+                <button className="btn-secondary-pdp" onClick={closeModal}>
                   Cerrar
                 </button>
               ) : (
                 <>
-                  <button className="btn-secondary" onClick={closeModal}>
+                  <button className="btn-secondary-pdp" onClick={closeModal}>
                     Cancelar
                   </button>
                   <button
-                    className="btn-primary"
+                    className="btn-primary-pdp"
                     onClick={modalMode === "create" ? handleCreateProduct : handleUpdateProduct}
                   >
                     <Save size={18} />
