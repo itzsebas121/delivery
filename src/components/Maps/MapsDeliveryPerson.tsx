@@ -70,7 +70,6 @@ const MapsDeliveryPerson = memo(({ startCoordinates, deliveryCoordinates, orders
     return delivery ? [delivery.lng, delivery.lat] : [0, 0]
   }, [delivery])
 
-  // Initialize map only once
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current || !delivery) return
 
@@ -112,7 +111,6 @@ const MapsDeliveryPerson = memo(({ startCoordinates, deliveryCoordinates, orders
     }
   }, [delivery, mapCenter])
 
-  // Calculate initial route
   const calculateInitialRoute = useCallback(async () => {
     const map = mapInstanceRef.current
     if (!map || !start || !delivery || !map.isStyleLoaded()) return
