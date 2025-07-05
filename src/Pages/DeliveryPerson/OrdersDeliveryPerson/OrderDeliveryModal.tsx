@@ -1,5 +1,3 @@
-"use client"
-
 import {  useState } from "react"
 import { X, MapPin, Navigation, CheckCircle, Phone, User, DollarSign, Loader2, Calendar } from "lucide-react"
 import { useAlert } from "../../../components/Alerts/Alert-system"
@@ -94,8 +92,8 @@ export default function OrderDeliveryModal({ order, onClose, onStartRoute, onCom
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container delivery-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="modal-header">
-          <div className="modal-title-section">
+        <div className="modal-header-odp">
+          <div className="modal-title-section-odp">
             <h2>
               <MapPin size={20} />
               Orden #{order.OrderId}
