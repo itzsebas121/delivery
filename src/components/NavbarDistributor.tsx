@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import "./NavbarClient.css"
-import {LogOut} from 'lucide-react'
+import {Box, Home, LogOut, Package, UsersRound} from 'lucide-react'
 const NavbarDistributor = () => {
   const {  logout, tipoUsuario } = useAuth()
   const navigate = useNavigate()
@@ -70,23 +70,23 @@ const NavbarDistributor = () => {
       >
         <li className="nav__item">
           <Link to="/dashboard-distribuidor" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Inicio
+            <Home></Home>Inicio
           </Link>
         </li>
         <li className="nav__item">
           <Link to="sales" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Pedidos
+            <Package></Package>Pedidos
           </Link>
         </li>
 
         <li className="nav__item">
           <Link to="delivery" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Repartidores
+            <UsersRound></UsersRound>Repartidores
           </Link>
         </li>
         <li className="nav__item">
           <Link to="products" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Productos
+            <Box></Box>Productos
           </Link>
         </li>
 

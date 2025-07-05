@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/Authcontext"
 import "./NavbarClient.css"
+import { Home, LogOut, Package } from "lucide-react"
 const NavbarDelivery = () => {
   const {  logout, tipoUsuario } = useAuth()
   const navigate = useNavigate()
@@ -69,12 +70,12 @@ const NavbarDelivery = () => {
       >
         <li className="nav__item">
           <Link to="home" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Inicio
+            <Home></Home>Inicio
           </Link>
         </li>
         <li className="nav__item">
           <Link to="sales" className="nav__link" onClick={() => setMenuOpen(false)}>
-            Pedidos
+            <Package></Package>Pedidos
           </Link>
         </li>
       </ul>
@@ -96,7 +97,7 @@ const NavbarDelivery = () => {
               
                 <li className="nav__dropdown-item nav__dropdown-item--danger">
                   <button onClick={handleLogout} className="nav__dropdown-button">
-                    <span className="nav__dropdown-icon">🚪</span>
+                    <span className="nav__dropdown-icon"><LogOut/></span>
                     Cerrar sesión
                   </button>
                 </li>
