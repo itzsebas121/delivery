@@ -624,22 +624,13 @@ BEGIN
         O.OrderId,
         O.OrderDate,
         O.Status,
-        P.ProductId,
         O.DeliveryAddress,
         CONCAT(O.DeliveryLatitude, ', ', O.DeliveryLongitude) AS DeliveryCoordinates,
-    CONCAT(O.StartRouteLatitude, ', ', O.StartRouteLongitude) AS StartCoordinates,
-        P.Name AS ProductName,
-        CI.Quantity,
-        CI.Price,
-        (CI.Quantity * CI.Price) AS Subtotal
+        CONCAT(O.StartRouteLatitude, ', ', O.StartRouteLongitude) AS StartCoordinates,
+        O.Total
     FROM ORDERS O
-    JOIN Carts C ON C.ClientId = O.ClientId
-    JOIN CartItems CI ON CI.CartId = C.CartId
-    JOIN PRODUCTS P ON P.ProductId = CI.ProductId
     WHERE O.ClientId = @ClientId
-    ORDER BY O.OrderDate DESC;
 END;
-
 
 CREATE OR ALTER PROCEDURE AddProductToCart
     @ClientId INT,

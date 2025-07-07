@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
@@ -31,7 +29,7 @@ interface Order {
   OrderDate: string
   Status: "Pending" | "Completada" | "Cancelada" | "En camino"
   DeliveryAddress: string
-  Subtotal: number
+  Total: number
   DeliveryCoordinates: string
   StartCoordinates: string
 }
@@ -69,11 +67,11 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
       (acc, order) => {
         const existingOrder = acc.find((o) => o.OrderId === order.OrderId)
         if (existingOrder) {
-          existingOrder.total += order.Subtotal
+          existingOrder.total += order.Total
         } else {
           acc.push({
             ...order,
-            total: order.Subtotal,
+            total: order.Total
           })
         }
         return acc
@@ -89,7 +87,6 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
     setError(null)
     try {
       const response = await fetch(`${baseURLRest}/product-history/${clientId}`)
-      console.log(`${baseURLRest}/product-history/${clientId}`)
       if (!response.ok) {
         throw new Error("Error al cargar los pedidos")
       }
@@ -383,7 +380,7 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
                           <span className="info-label">Total</span>
                         </div>
                         <div className="info-content">
-                          <span className="info-value price">${order.total.toFixed(2)}</span>
+                          <span className="info-value price">${order.Total}</span>
                         </div>
                       </div>
 
@@ -501,7 +498,6 @@ const OrderHistory: React.FC<{ clientId?: number }> = () => {
         </div>
       </div>
 
-      {/* Order Details Modal */}
       {showModal && selectedOrder && (
         <OrderDetailsModal
           order={{

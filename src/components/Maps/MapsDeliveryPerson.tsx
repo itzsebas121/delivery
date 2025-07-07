@@ -147,6 +147,7 @@ const MapsDeliveryPerson = memo(({ startCoordinates, deliveryCoordinates, orders
 
   // Initialize speech synthesis
   useEffect(() => {
+    console.log(startCoordinates, deliveryCoordinates, orderstatus)
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       speechSynthesisRef.current = window.speechSynthesis
     }
