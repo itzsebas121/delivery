@@ -115,7 +115,7 @@ const HomeClient: React.FC = () => {
                         <section className="restaurant-info">
                             <div className="restaurant-header">
                                 <h3>🔥 Hot-Grill</h3>
-                                <span className="status-badge open">Abierto</span>
+                                <span className="status-badge close">Cerrado</span>
                             </div>
 
                             <div className="detail-grid">

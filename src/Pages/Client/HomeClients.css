@@ -293,7 +293,10 @@
   background: var(--accent-green);
   color: var(--white);
 }
-
+.status-badge.close {
+  background: #f00;
+  color: var(--white);
+}
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
