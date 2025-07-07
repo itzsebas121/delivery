@@ -1,8 +1,6 @@
-"use client"
-
 import "./ProductCard.css"
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { Package, ShoppingCart, Plus, Loader2, Check } from "lucide-react"
 import { useAlert } from "./Alerts/Alert-system"
 
@@ -19,12 +17,114 @@ interface ProductCardProps {
   isAdded?: boolean
 }
 
+const LazyImage = ({
+  src,
+  alt,
+  className,
+  onLoad,
+  onError,
+}: {
+  src: string
+  alt: string
+  className: string
+  onLoad: () => void
+  onError: () => void
+}) => {
+  const [imageSrc, setImageSrc] = useState<string>("")
+  const [imageRef, setImageRef] = useState<HTMLImageElement | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
+
+  const imgCallbackRef = useCallback(
+    (imgElement: HTMLImageElement | null) => {
+      if (imageRef) {
+        imageRef.onload = null
+        imageRef.onerror = null
+      }
+      if (imgElement) {
+        setImageRef(imgElement)
+        if (src && src.trim() !== "") {
+          imgElement.onload = () => {
+            setIsLoaded(true)
+            setImageSrc(src)
+            onLoad()
+          }
+          imgElement.onerror = () => {
+            setHasError(true)
+            onError()
+          }
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  imgElement.src = src
+                  observer.unobserve(imgElement)
+                }
+              })
+            },
+            { threshold: 0.1 },
+          )
+          observer.observe(imgElement)
+        }
+      }
+    },
+    [src, imageRef, onLoad, onError],
+  )
+
+  const generatePlaceholder = () => {
+    const colors = [
+      "var(--primary-orange)",
+      "var(--primary-red)",
+      "var(--primary-yellow)",
+      "var(--accent-green)",
+      "var(--info)",
+      "var(--primary-brown)",
+    ]
+    const color = colors[alt.length % colors.length]
+    const initials = alt
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase()
+
+    return (
+      <div className={`image-placeholder-pcc ${className}`} style={{ backgroundColor: color }}>
+        <span className="placeholder-text-pcc">{initials}</span>
+      </div>
+    )
+  }
+
+  // Solo mostrar iniciales si no hay src o src es null/vacío
+  if (!src || src.trim() === "") {
+    return generatePlaceholder()
+  }
+
+  // Si hay error al cargar pero sí hay URL, mostrar fallback normal
+  if (hasError) {
+    return (
+      <div className="product-fallback-pcc">
+        <Package size={24} />
+      </div>
+    )
+  }
+
+  return (
+    <img
+      ref={imgCallbackRef}
+      src={imageSrc || "/placeholder.svg"}
+      alt={alt}
+      className={`${className} ${isLoaded ? "loaded-pcc" : "loading-pcc"}`}
+    />
+  )
+}
+
 const ProductCard: React.FC<ProductCardProps> = ({
   productId,
   productName,
   description,
   price,
-  stock = 10, // valor por defecto
+  stock = 10,
   imageURL,
   categoryName,
   onAddToCart,
@@ -34,12 +134,11 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [hasError, setHasError] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
   const [isInView, setIsInView] = useState(false)
-  const imgRef = useRef<HTMLImageElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
-
   const { showCartSuccess, showWarning, showError } = useAlert()
+  const [isButtonLoading, setIsButtonLoading] = useState(false)
 
-  // Intersection Observer para lazy loading
+  // Intersection Observer para lazy loading del card completo
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -48,7 +147,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           observer.disconnect()
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1, rootMargin: "50px" },
     )
 
     if (cardRef.current) {
@@ -66,21 +165,27 @@ const ProductCard: React.FC<ProductCardProps> = ({
     }
 
     // Verificar si ya se está procesando
-    if (isLoading) {
+    if (isButtonLoading || isLoading) {
       return
     }
 
+    setIsButtonLoading(true)
+
     try {
       if (onAddToCart) {
-        await onAddToCart({
+        // Crear una promesa que dure mínimo 2 segundos
+        const minDelay = new Promise((resolve) => setTimeout(resolve, 500))
+        const addToCartPromise = onAddToCart({
           ProductId: productId,
           ProductName: productName,
           Description: description,
           Price: price,
-          Stock: stock,
           ImageURL: imageURL,
           CategoryName: categoryName,
         })
+
+        // Esperar tanto la operación como el delay mínimo
+        await Promise.all([addToCartPromise, minDelay])
 
         // Mostrar alerta de éxito solo si no hay error
         showCartSuccess(productName)
@@ -88,6 +193,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
     } catch (error) {
       // El error ya se maneja en el componente padre, pero podemos agregar una alerta adicional aquí si es necesario
       showError("Error al agregar", "No se pudo agregar el producto al carrito. Intenta nuevamente.")
+    } finally {
+      setIsButtonLoading(false)
     }
   }
 
@@ -103,65 +210,58 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isOutOfStock = stock <= 0
 
   return (
-    <div ref={cardRef} className={`product-card-compact ${isOutOfStock ? "out-of-stock" : ""}`}>
-      <div className="product-image-container">
+    <div ref={cardRef} className={`product-card-compact-pcc ${isOutOfStock ? "out-of-stock-pcc" : ""}`}>
+      <div className="product-image-container-pcc">
         {!isInView ? (
-          <div className="product-skeleton"></div>
-        ) : hasError ? (
-          <div className="product-fallback">
-            <Package size={24} />
-          </div>
+          <div className="product-skeleton-pcc"></div>
         ) : (
           <>
-            {!isLoaded && <div className="product-skeleton"></div>}
-            <img
-              ref={imgRef}
-              src={imageURL || "/placeholder.svg"}
+            {!isLoaded && !hasError && <div className="product-skeleton-pcc"></div>}
+            <LazyImage
+              src={imageURL}
               alt={productName}
-              className={`product-image ${isLoaded ? "loaded" : ""}`}
+              className="product-image-pcc"
               onLoad={handleImageLoad}
               onError={handleImageError}
-              loading="lazy"
             />
           </>
         )}
 
-        <div className="product-category-badge">{categoryName}</div>
+        <div className="product-category-badge-pcc">{categoryName}</div>
 
         {/* Stock badge */}
-        {isOutOfStock && <div className="product-stock-badge out-of-stock">Agotado</div>}
+        {isOutOfStock && <div className="product-stock-badge-pcc out-of-stock-pcc">Agotado</div>}
 
         {/* Quick add button con estados */}
         <button
-          className={`product-quick-add ${isLoading ? "loading" : ""} ${isAdded ? "added" : ""}`}
+          className={`product-quick-add-pcc ${isButtonLoading || isLoading ? "loading-pcc" : ""} ${isAdded ? "added-pcc" : ""}`}
           onClick={handleAddToCart}
-          disabled={isLoading || isOutOfStock}
+          disabled={isButtonLoading || isLoading || isOutOfStock}
+          title={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
         >
-          {isLoading ? <Loader2 size={16} className="spinning" /> : isAdded ? <Check size={16} /> : <Plus size={16} />}
+          {isButtonLoading || isLoading ? (
+            <Loader2 size={16} className="spinning-pcc" />
+          ) : isAdded ? (
+            <Check size={16} />
+          ) : (
+            <Plus size={16} />
+          )}
         </button>
       </div>
 
-      <div className="product-content">
-        <h3 className="product-name">{productName}</h3>
-        <p className="product-description">{description}</p>
-
-        {/* Información de stock */}
-        <div className="product-stock-info">
-          <span className={`stock-indicator ${isOutOfStock ? "out-of-stock" : stock <= 5 ? "low-stock" : "in-stock"}`}>
-            {isOutOfStock ? "Sin stock" : `${stock} disponibles`}
-          </span>
-        </div>
-
-        <div className="product-footer">
-          <span className="product-price">${price.toFixed(2)}</span>
+      <div className="product-content-pcc">
+        <h3 className="product-name-pcc">{productName}</h3>
+        <p className="product-description-pcc">{description}</p>
+        <div className="product-footer-pcc">
+          <span className="product-price-pcc">${price.toFixed(2)}</span>
           <button
-            className={`product-add-btn ${isLoading ? "loading" : ""} ${isAdded ? "added" : ""}`}
+            className={`product-add-btn-pcc ${isButtonLoading || isLoading ? "loading-pcc" : ""} ${isAdded ? "added-pcc" : ""}`}
             onClick={handleAddToCart}
-            disabled={isLoading || isOutOfStock}
+            disabled={isButtonLoading || isLoading || isOutOfStock}
           >
-            {isLoading ? (
+            {isButtonLoading || isLoading ? (
               <>
-                <Loader2 size={14} className="spinning" />
+                <Loader2 size={14} className="spinning-pcc" />
                 Agregando...
               </>
             ) : isAdded ? (
